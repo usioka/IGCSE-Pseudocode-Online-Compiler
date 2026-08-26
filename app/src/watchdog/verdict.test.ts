@@ -121,3 +121,67 @@ describe('RequirementWatchdog — Type 2 (user interaction)', () => {
     expect(verdict.status).toBe('violated');
   });
 });
+
+describe('RequirementWatchdog — directional mutation (increase/decrease)', () => {
+  it('satisfies "increment" when the object numerically increases', async () => {
+    const verdict = await check(
+      'The System must increment Total.',
+      'DECLARE Total : INTEGER\nTotal <- 0\nTotal <- Total + 5\nOUTPUT Total\n',
+    );
+    expect(verdict.status).toBe('satisfied');
+  });
+
+  it('violates "increment" when the object actually decreases', async () => {
+    // DECLARE's own default (0 for INTEGER) counts as the first appearance
+    // (same documented behavior as the plain mutation check), so the
+    // decrease needs to land below that default, not just below an earlier
+    // explicit assignment.
+    const verdict = await check(
+      'The System must increment Total.',
+      'DECLARE Total : INTEGER\nTotal <- 0\nTotal <- Total - 5\nOUTPUT Total\n',
+    );
+    expect(verdict.status).toBe('violated');
+  });
+
+  it('satisfies "reduce" when the object numerically decreases', async () => {
+    const verdict = await check(
+      'The System must reduce Total.',
+      'DECLARE Total : INTEGER\nTotal <- 0\nTotal <- Total - 5\nOUTPUT Total\n',
+    );
+    expect(verdict.status).toBe('satisfied');
+  });
+
+  it('violates "reduce" when the object actually increases', async () => {
+    const verdict = await check(
+      'The System must reduce Total.',
+      'DECLARE Total : INTEGER\nTotal <- 0\nTotal <- Total + 5\nOUTPUT Total\n',
+    );
+    expect(verdict.status).toBe('violated');
+  });
+
+  it('is inconclusive for "increment" when the object is not numeric', async () => {
+    const verdict = await check(
+      'The System must increment Message.',
+      'DECLARE Message : STRING\nMessage <- "Hello"\nMessage <- "World"\nOUTPUT Message\n',
+    );
+    expect(verdict.status).toBe('inconclusive');
+  });
+});
+
+describe('RequirementWatchdog — target value (confirm/validate/flag/mark)', () => {
+  it('satisfies "confirm" when the object reaches TRUE at any point in the run', async () => {
+    const verdict = await check(
+      'The System must confirm Verified.',
+      'DECLARE Verified : BOOLEAN\nVerified <- FALSE\nVerified <- TRUE\nOUTPUT Verified\n',
+    );
+    expect(verdict.status).toBe('satisfied');
+  });
+
+  it('violates "confirm" when the object never reaches TRUE', async () => {
+    const verdict = await check(
+      'The System must confirm Verified.',
+      'DECLARE Verified : BOOLEAN\nVerified <- FALSE\nOUTPUT Verified\n',
+    );
+    expect(verdict.status).toBe('violated');
+  });
+});

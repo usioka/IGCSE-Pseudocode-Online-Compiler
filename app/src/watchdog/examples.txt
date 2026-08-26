@@ -2,199 +2,172 @@ WATCHDOG TEST EXAMPLES
 ======================
 
 How to use this file:
-Go to localhost:3000/watchdog (npm run dev). Paste the PSEUDOCODE block into
-the left box and the REQUIREMENT line(s) into the right box, then click "Run
-watchdog". Compare what you see against the VERDICT noted for that scenario
-(also pinned down by the automated test suite at app/src/watchdog/verdict.test.ts,
-so if the two ever disagree, trust neither blindly — something's actually
-broken). Scenarios with an INPUT statement won't show a prompt on this page —
-the checker runs headlessly and auto-feeds an empty string to every INPUT so
-the run can complete on its own; the watchdog only checks that an input was
-requested, not what value was given, so this doesn't affect the verdict.
-(The main compiler at localhost:3000, not /watchdog, is where INPUT actually
-pauses for you to type something — useful if you want to see a scenario's
-pseudocode run interactively instead of just checking its verdict.)
+Go to localhost:3000/watchdog (npm run dev). Paste `code` into the left box
+and `req.` into the right box, click "Run watchdog", and compare what you
+see against `res`. (Or use localhost:3000/sophist-watchdog to see the
+generated check — TS or pseudocode — behind any of these.) Every pairing
+below is pinned down by the automated test suite (verdict.test.ts,
+codegenPseudocode.test.ts), so if the page ever disagrees with `res`,
+something's actually broken.
 
-Verdict meanings:
+res meanings:
   satisfied     -> the run gave the watchdog evidence the requirement held
   violated      -> the run gave the watchdog evidence the requirement did NOT hold
   inconclusive  -> the watchdog has no way to check this (e.g. unknown verb)
 
 
-SCENARIO 1 — mutation verb, satisfied
---------------------------------------
-REQUIREMENT: The System must calculate Total.
-
-PSEUDOCODE:
+1) mutation — satisfied
+code:
 DECLARE Total : INTEGER
 Total <- 0
 FOR i <- 1 TO 5
   Total <- Total + i
 NEXT i
 OUTPUT Total
+req.: The System must calculate Total.
+res: satisfied (Total changed from "0" to "15")
 
-Run this and confirm it prints 15.
-VERDICT: satisfied — Total's value changed from "0" to "15" during the run.
 
-
-SCENARIO 2 — mutation verb, violated
---------------------------------------
-REQUIREMENT: The System must calculate Total.
-
-PSEUDOCODE:
+2) mutation — violated
+code:
 DECLARE Total : INTEGER
 Total <- 0
 OUTPUT Total
+req.: The System must calculate Total.
+res: violated (Total never changed, stayed "0")
 
-Run this and confirm it prints 0 and nothing ever recomputes Total.
-VERDICT: violated — Total was declared but its value never changed (stayed "0").
+
+3) increase — satisfied
+code:
+DECLARE Total : INTEGER
+Total <- 0
+Total <- Total + 5
+OUTPUT Total
+req.: The System must increment Total.
+res: satisfied (Total increased from 0 to 5)
 
 
-SCENARIO 3 — output verb, satisfied
---------------------------------------
-REQUIREMENT: The System must OUTPUT Message.
+4) increase — violated (it moved, just the wrong way)
+code:
+DECLARE Total : INTEGER
+Total <- 0
+Total <- Total - 5
+OUTPUT Total
+req.: The System must increment Total.
+res: violated (Total went from 0 to -5, which is not an increase)
 
-PSEUDOCODE:
+
+5) increase — inconclusive (not numeric)
+code:
+DECLARE Message : STRING
+Message <- "Hello"
+Message <- "World"
+OUTPUT Message
+req.: The System must increment Message.
+res: inconclusive (Message isn't numeric, so a direction can't be judged)
+
+
+6) decrease — satisfied
+code:
+DECLARE Total : INTEGER
+Total <- 0
+Total <- Total - 5
+OUTPUT Total
+req.: The System must reduce Total.
+res: satisfied (Total decreased from 0 to -5)
+
+
+7) target-value — satisfied
+code:
+DECLARE Verified : BOOLEAN
+Verified <- FALSE
+Verified <- TRUE
+OUTPUT Verified
+req.: The System must confirm Verified.
+res: satisfied (Verified reached "TRUE" at some point in the run)
+
+
+8) target-value — violated
+code:
+DECLARE Verified : BOOLEAN
+Verified <- FALSE
+OUTPUT Verified
+req.: The System must confirm Verified.
+res: violated (Verified never became "TRUE"; last seen as "FALSE")
+
+
+9) output — satisfied
+code:
 DECLARE Message : STRING
 Message <- "Hello"
 OUTPUT Message
+req.: The System must OUTPUT Message.
+res: satisfied (Message's value "Hello" was printed via OUTPUT)
 
-Run this and confirm it prints Hello.
-VERDICT: satisfied — Message's value ("Hello") was printed via OUTPUT.
 
-
-SCENARIO 4 — output verb, violated
---------------------------------------
-REQUIREMENT: The System must OUTPUT Message.
-
-PSEUDOCODE:
+10) output — violated
+code:
 DECLARE Message : STRING
 Message <- "Hello"
+req.: The System must OUTPUT Message.
+res: violated (Message was set but never printed via OUTPUT)
 
-Run this and confirm it produces no output at all.
-VERDICT: violated — Message was set but never printed via OUTPUT.
 
-
-SCENARIO 5 — object never appears in the program
---------------------------------------
-REQUIREMENT: The System must calculate Total.
-
-PSEUDOCODE:
+11) object never appears — violated
+code:
 DECLARE X : INTEGER
 X <- 1
 OUTPUT X
+req.: The System must calculate Total.
+res: violated ("Total" never appeared in the program's variable state)
 
-Run this and confirm it prints 1. Note there's no "Total" anywhere in the program.
-VERDICT: violated — "Total" never appeared in the program's variable state.
 
-
-SCENARIO 6 — verb outside the glossary (e.g. implies a procedure CALL)
---------------------------------------
-REQUIREMENT: The System must invoke Total.
-
-PSEUDOCODE:
+12) unknown verb — inconclusive
+code:
 DECLARE Total : INTEGER
 Total <- 0
 OUTPUT Total
-
-Run this and confirm it prints 0.
-VERDICT: inconclusive — "invoke" isn't in the watchdog's verb glossary, so it
-doesn't know what to check. This is a real, expected limitation, not a bug —
-see the header comment in app/src/watchdog/verdict.ts for why CALL-style
-verbs can't currently be verified at all.
+req.: The System must invoke Total.
+res: inconclusive ("invoke" isn't in the watchdog's verb glossary — see verdict.ts)
 
 
-SCENARIO 7 — the run itself errors
---------------------------------------
-REQUIREMENT: The System must calculate X.
-
-PSEUDOCODE:
+13) the run itself errors — violated
+code:
 DECLARE X : INTEGER
 X <- 1 / 0
-
-Run this and confirm the compiler shows a "Division by zero" runtime error.
-VERDICT: violated — the run did not complete.
-
-
-SCENARIO 8 — conditioned requirement + hyphenated subject (grammar only)
---------------------------------------
-REQUIREMENT: If the sensor detects motion, the Smart-Home-System must calculate Total.
-
-This one sanity-checks the grammar's condition clause and hyphenated
-compound subject name ("Smart-Home-System") parsing. Pair it with the
-pseudocode from Scenario 1 or 2 — since "calculate" IS in the glossary,
-you'll get the same satisfied/violated verdict as that scenario. The "If
-..." condition clause itself is parsed but not evaluated (documented
-limitation: treated as always-true), so it doesn't change the outcome.
+req.: The System must calculate X.
+res: violated (the run did not complete — Division by zero)
 
 
-SCENARIO 9 — Type 2 (user interaction), satisfied
---------------------------------------
-REQUIREMENT: The System must offer the user the possibility to open Door.
-
-PSEUDOCODE:
+14) Type 2 (user interaction) — satisfied
+code:
 DECLARE Choice : STRING
 DECLARE Door : STRING
 Door <- "Closed"
 INPUT Choice
 Door <- "Open"
 OUTPUT Door
+req.: The System must offer the user the possibility to open Door.
+res: satisfied (input was requested, and Door changed — its DECLARE default of
+"" counts as the first appearance, so the watchdog reports "" -> "Open", not
+"Closed" -> "Open")
 
-Run this and confirm it prints Open.
-VERDICT: satisfied — the run requested input (Choice), and Door changed
-from "Closed" to "Open".
 
-
-SCENARIO 10 — Type 2, violated (no interaction offered at all)
---------------------------------------
-REQUIREMENT: The System must offer the user the possibility to open Door.
-
-PSEUDOCODE:
+15) Type 2 — violated (no interaction offered at all)
+code:
 DECLARE Door : STRING
 Door <- "Closed"
 Door <- "Open"
 OUTPUT Door
-
-Run this and confirm it prints Open with no INPUT anywhere in the program.
-VERDICT: violated — the run never requested any input, so no interaction
-was offered, even though Door did end up changing.
+req.: The System must offer the user the possibility to open Door.
+res: violated (no input was ever requested, even though Door did change)
 
 
-SCENARIO 11 — Type 2, violated (interaction happened, object still didn't change)
---------------------------------------
-REQUIREMENT: The System must offer the user the possibility to open Door.
-
-PSEUDOCODE:
+16) Type 2 — violated (interaction happened, object still didn't move)
+code:
 DECLARE Choice : STRING
 DECLARE Door : STRING
 INPUT Choice
 OUTPUT Door
-
-Run this and confirm it asks for Choice then prints nothing (Door stays
-unset).
-VERDICT: violated — input was requested, but Door was never assigned, so it
-never changed. Interaction alone isn't enough; the object still has to move.
-
-
-SCENARIO 12 — mixing Type 1 and Type 2 in one document
---------------------------------------
-REQUIREMENT (two lines, paste both):
-The System must calculate Total.
-The System must offer the user the possibility to open Door.
-
-PSEUDOCODE:
-DECLARE Total : INTEGER
-Total <- 0
-DECLARE Choice : STRING
-DECLARE Door : STRING
-Door <- "Closed"
-INPUT Choice
-Door <- "Open"
-OUTPUT Total
-OUTPUT Door
-
-Run this and confirm it prints 0 then Open.
-VERDICT: violated overall. The second requirement (Door) would be satisfied
-on its own, but Total never changes, so the first requirement is violated —
-and checkRequirementDocument() reports the worst status across the whole
-document, not just the last one checked.
+req.: The System must offer the user the possibility to open Door.
+res: violated (input was requested, but Door was never assigned)

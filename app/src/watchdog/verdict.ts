@@ -6,14 +6,9 @@
 // What's checkable, and why: the interpreter's public surface (see the
 // header comment in observe.ts) exposes no CALL hook and no assignment hook —
 // only per-statement variable snapshots (DebugVariable[]), OUTPUT text, and
-// (as of Type 2) which variables were the target of an INPUT request. So this
-// watchdog can only verify two kinds of verb, not arbitrary ones:
-//
-//   - "mutation" verbs (calculate, update, set, ...): satisfied if the
-//     object's value differs between its first and last appearance in the
-//     trace — i.e. something in the run actually wrote to it.
-//   - "output" verbs (output, display, print, ...): satisfied if the
-//     object's current value shows up in an OUTPUT at the same step.
+// (as of Type 2) which variables were the target of an INPUT request. Every
+// verb category below is, in the end, some predicate over that same data —
+// there's no richer signal to draw on, only different questions to ask of it.
 //
 // A verb outside VERB_GLOSSARY (below), most obviously anything implying a
 // procedure/function CALL (invoke, call, run, execute, trigger), cannot be
@@ -24,6 +19,13 @@
 // would need a hook the interpreter doesn't expose, and adding one means
 // editing core/interpreter.ts, which the thesis's constraint (see
 // CLAUDE.local.md) rules out.
+//
+// Categories are registered in CATEGORY_CHECKS, each a standalone function
+// over (object, observation). Adding a new one never touches the existing
+// ones — write the function, add it to CATEGORY_CHECKS, point glossary
+// entries at its key. VERB_GLOSSARY's value type is `keyof typeof
+// CATEGORY_CHECKS`, so a typo'd or unregistered category name is a compile
+// error, not a silent no-op.
 //
 // Type 2 ("user interaction") reuses the exact same verb/object check as
 // Type 1, plus one extra condition: the run must contain at least one INPUT
@@ -55,7 +57,105 @@ export interface Verdict {
   reason: string;
 }
 
-type VerbCategory = 'output' | 'mutation';
+function satisfied(reason: string): Verdict {
+  return { status: 'satisfied', reason };
+}
+function violated(reason: string): Verdict {
+  return { status: 'violated', reason };
+}
+function inconclusive(reason: string): Verdict {
+  return { status: 'inconclusive', reason };
+}
+
+/** Every step where `object` appears, paired with its variable snapshot at that step. */
+function objectSteps(object: string, observation: RunObservation): { step: ObservedStep; variable: DebugVariable }[] {
+  return observation.steps
+    .map((step) => ({ step, variable: step.variables.find((v) => v.name === object) }))
+    .filter((entry): entry is { step: ObservedStep; variable: DebugVariable } => entry.variable !== undefined);
+}
+
+/** mutation: did the object's value differ at all between its first and last appearance. */
+function checkMutation(object: string, observation: RunObservation): Verdict {
+  const steps = objectSteps(object, observation);
+  if (steps.length === 0) {
+    return violated(`"${object}" never appeared in the program's variable state during the run.`);
+  }
+  const first = steps[0].variable.value;
+  const last = steps[steps.length - 1].variable.value;
+  return first !== last
+    ? satisfied(`"${object}" changed from "${first}" to "${last}" during the run.`)
+    : violated(`"${object}" was declared but its value never changed during the run (stayed "${first}").`);
+}
+
+/** output: did the object's value ever show up in an OUTPUT at the same step. */
+function checkOutput(object: string, observation: RunObservation): Verdict {
+  const steps = objectSteps(object, observation);
+  if (steps.length === 0) {
+    return violated(`"${object}" never appeared in the program's variable state during the run.`);
+  }
+  const wasPrinted = steps.some(({ step, variable }) => step.output.some((line) => line.includes(variable.value)));
+  return wasPrinted
+    ? satisfied(`"${object}"'s value was printed via OUTPUT during the run.`)
+    : violated(`"${object}" was never printed via OUTPUT during the run.`);
+}
+
+/**
+ * increase/decrease: like mutation, but the first-vs-last comparison is
+ * numeric and directional, not just "differs" — increment/grow only count
+ * if the value actually went up, decrement/reduce only if it went down.
+ * Falls back to inconclusive (not violated) when the value isn't numeric,
+ * since direction genuinely can't be judged then — that's a limit of the
+ * object's type, not evidence against the requirement.
+ */
+function checkDirectional(object: string, observation: RunObservation, direction: 'increase' | 'decrease'): Verdict {
+  const article = direction === 'increase' ? 'an' : 'a';
+  const steps = objectSteps(object, observation);
+  if (steps.length === 0) {
+    return violated(`"${object}" never appeared in the program's variable state during the run.`);
+  }
+  const firstText = steps[0].variable.value;
+  const lastText = steps[steps.length - 1].variable.value;
+  const first = Number(firstText);
+  const last = Number(lastText);
+  if (Number.isNaN(first) || Number.isNaN(last)) {
+    return inconclusive(
+      `"${object}"'s value ("${firstText}" → "${lastText}") isn't numeric, so ${article} ${direction} can't be checked.`,
+    );
+  }
+  const moved = direction === 'increase' ? last > first : last < first;
+  return moved
+    ? satisfied(`"${object}" ${direction}d from ${first} to ${last} during the run.`)
+    : violated(`"${object}" went from ${first} to ${last} during the run, which is not ${article} ${direction}.`);
+}
+
+/**
+ * targetValue: did the object ever reach a specific fixed value (default
+ * "TRUE", matching how the interpreter itself stringifies BOOLEAN — see
+ * toString() in core/values.ts) at any point in the run, not just at the end.
+ * For verbs like confirm/validate/flag/mark, which are naturally about a
+ * flag becoming true rather than "changed" or "was printed."
+ */
+function checkTargetValue(object: string, observation: RunObservation, target = 'TRUE'): Verdict {
+  const steps = objectSteps(object, observation);
+  if (steps.length === 0) {
+    return violated(`"${object}" never appeared in the program's variable state during the run.`);
+  }
+  const reached = steps.some(({ variable }) => variable.value.toUpperCase() === target);
+  const lastSeen = steps[steps.length - 1].variable.value;
+  return reached
+    ? satisfied(`"${object}" reached the value "${target}" during the run.`)
+    : violated(`"${object}" never became "${target}" during the run (last seen as "${lastSeen}").`);
+}
+
+const CATEGORY_CHECKS = {
+  mutation: checkMutation,
+  output: checkOutput,
+  increase: (object: string, observation: RunObservation) => checkDirectional(object, observation, 'increase'),
+  decrease: (object: string, observation: RunObservation) => checkDirectional(object, observation, 'decrease'),
+  targetValue: (object: string, observation: RunObservation) => checkTargetValue(object, observation),
+} satisfies Record<string, (object: string, observation: RunObservation) => Verdict>;
+
+export type VerbCategory = keyof typeof CATEGORY_CHECKS;
 
 /**
  * Small, deliberately explicit glossary (SOPHIST itself recommends collecting
@@ -77,20 +177,25 @@ export const VERB_GLOSSARY: Record<string, VerbCategory> = {
   determine: 'mutation',
   generate: 'mutation',
   assign: 'mutation',
-  increment: 'mutation',
   modify: 'mutation',
   open: 'mutation',
-};
 
-function satisfied(reason: string): Verdict {
-  return { status: 'satisfied', reason };
-}
-function violated(reason: string): Verdict {
-  return { status: 'violated', reason };
-}
-function inconclusive(reason: string): Verdict {
-  return { status: 'inconclusive', reason };
-}
+  increment: 'increase',
+  increase: 'increase',
+  grow: 'increase',
+  raise: 'increase',
+
+  decrement: 'decrease',
+  decrease: 'decrease',
+  reduce: 'decrease',
+  shrink: 'decrease',
+  lower: 'decrease',
+
+  confirm: 'targetValue',
+  validate: 'targetValue',
+  flag: 'targetValue',
+  mark: 'targetValue',
+};
 
 /** Combines per-requirement verdicts for a document: worst status wins. */
 function combine(verdicts: Verdict[]): Verdict {
@@ -110,28 +215,7 @@ function checkVerbObject(verbText: string, object: string, observation: RunObser
       `Verb "${verbText}" is not in the watchdog's glossary, so it's unknown what to check for "${object}".`,
     );
   }
-
-  const objectSteps = observation.steps
-    .map((step) => ({ step, variable: step.variables.find((v) => v.name === object) }))
-    .filter((entry): entry is { step: ObservedStep; variable: DebugVariable } => entry.variable !== undefined);
-
-  if (objectSteps.length === 0) {
-    return violated(`"${object}" never appeared in the program's variable state during the run.`);
-  }
-
-  if (category === 'mutation') {
-    const first = objectSteps[0].variable.value;
-    const last = objectSteps[objectSteps.length - 1].variable.value;
-    return first !== last
-      ? satisfied(`"${object}" changed from "${first}" to "${last}" during the run, consistent with "${verbText}".`)
-      : violated(`"${object}" was declared but its value never changed during the run (stayed "${first}").`);
-  }
-
-  // category === 'output'
-  const wasPrinted = objectSteps.some(({ step, variable }) => step.output.some((line) => line.includes(variable.value)));
-  return wasPrinted
-    ? satisfied(`"${object}"'s value was printed via OUTPUT during the run, consistent with "${verbText}".`)
-    : violated(`"${object}" was never printed via OUTPUT during the run.`);
+  return CATEGORY_CHECKS[category](object, observation);
 }
 
 export class RequirementWatchdog extends RequirementVisitor<Verdict> {

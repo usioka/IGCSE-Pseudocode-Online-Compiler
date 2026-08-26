@@ -58,7 +58,7 @@ describe('generatePseudocodeWatchdog — generated code is valid, runnable pseud
     // Remove the FOR loop body's mutation so Total never actually changes.
     const brokenExample = example.replace('    Total <- Total + i\n', '');
     const output = await runPseudocode(brokenExample);
-    expect(output).toContain('VIOLATED: Total was declared but its value never changed (stayed 0)');
+    expect(output).toContain('VIOLATED: Total went from 0 to 0, which is not a change');
   });
 
   it('a hand-modified copy of the Type 2 example prints VIOLATED when no input was taken', async () => {
@@ -79,5 +79,37 @@ describe('generatePseudocodeWatchdog — generated code is valid, runnable pseud
     expect(code).toContain('PROCEDURE Watchdog_Total');
     expect(code).toContain('ENDPROCEDURE');
     expect(code).toContain('CALL Watchdog_Total(');
+  });
+
+  it('increase: the example program runs and prints SATISFIED', async () => {
+    const { example } = generate('The System must increment Total.');
+    const output = await runPseudocode(example);
+    expect(output).toContain('SATISFIED: Total increased from 0 to 15');
+  });
+
+  it('decrease: the example program runs and prints SATISFIED (a genuine decrease, not just a change)', async () => {
+    const { example } = generate('The System must reduce Total.');
+    const output = await runPseudocode(example);
+    expect(output).toContain('SATISFIED: Total decreased from 20 to 5');
+  });
+
+  it('increase: a hand-modified copy prints VIOLATED when the value actually decreases', async () => {
+    const { example } = generate('The System must increment Total.');
+    const brokenExample = example.replace('Total <- Total + i', 'Total <- Total - i');
+    const output = await runPseudocode(brokenExample);
+    expect(output).toContain('VIOLATED: Total went from 0 to -15, which is not an increase');
+  });
+
+  it('target-value: the example program runs and prints SATISFIED', async () => {
+    const { example } = generate('The System must confirm Verified.');
+    const output = await runPseudocode(example);
+    expect(output).toContain('SATISFIED: Verified reached the value TRUE');
+  });
+
+  it('target-value: a hand-modified copy prints VIOLATED when the value never becomes TRUE', async () => {
+    const { example } = generate('The System must confirm Verified.');
+    const brokenExample = example.replace('Verified <- "TRUE"\n', '');
+    const output = await runPseudocode(brokenExample);
+    expect(output).toContain('VIOLATED: Verified never became TRUE (last seen as FALSE)');
   });
 });

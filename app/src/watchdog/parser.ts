@@ -1,13 +1,17 @@
-// Parser facade for Requirement.g4 — mirrors the shape of
-// app/src/interpreter/parser.ts (CharStream -> Lexer -> TokenStream -> Parser,
-// with a collecting error listener instead of ANTLR's console-dumping default)
-// so a caller gets back a parse tree plus a list of syntax errors instead of
-// having to wire the ANTLR pipeline itself. New, independent file — does not
-// import from or modify anything under app/src/interpreter/.
-
-import { CharStream, CommonTokenStream, BaseErrorListener, RecognitionException, Recognizer, Token, ATNSimulator } from 'antlr4ng';
-import { RequirementLexer } from './generated/RequirementLexer';
-import { RequirementParser, DocumentContext } from './generated/RequirementParser';
+import {
+  CharStream,
+  CommonTokenStream,
+  BaseErrorListener,
+  RecognitionException,
+  Recognizer,
+  Token,
+  ATNSimulator,
+} from "antlr4ng";
+import { RequirementLexer } from "./generated/RequirementLexer";
+import {
+  RequirementParser,
+  DocumentContext,
+} from "./generated/RequirementParser";
 
 export class RequirementSyntaxError {
   constructor(
@@ -38,7 +42,7 @@ export interface RequirementParseResult {
 }
 
 export function parseRequirement(source: string): RequirementParseResult {
-  const input = source.endsWith('\n') ? source : source + '\n';
+  const input = source.endsWith("\n") ? source : source + "\n";
 
   const chars = CharStream.fromString(input);
   const lexer = new RequirementLexer(chars);

@@ -1,21 +1,3 @@
-WATCHDOG TEST EXAMPLES
-======================
-
-How to use this file:
-Go to localhost:3000/watchdog (npm run dev). Paste `code` into the left box
-and `req.` into the right box, click "Run watchdog", and compare what you
-see against `res`. (Or use localhost:3000/sophist-watchdog to see the
-generated check — TS or pseudocode — behind any of these.) Every pairing
-below is pinned down by the automated test suite (verdict.test.ts,
-codegenPseudocode.test.ts), so if the page ever disagrees with `res`,
-something's actually broken.
-
-res meanings:
-  satisfied     -> the run gave the watchdog evidence the requirement held
-  violated      -> the run gave the watchdog evidence the requirement did NOT hold
-  inconclusive  -> the watchdog has no way to check this (e.g. unknown verb)
-
-
 1) mutation — satisfied
 code:
 DECLARE Total : INTEGER

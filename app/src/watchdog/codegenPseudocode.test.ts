@@ -1,14 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { parseRequirement } from './parser';
-import { generatePseudocodeWatchdog } from './codegenPseudocode';
-import { AutonomousActivityContext, UserInteractionContext } from './generated/RequirementParser';
-import { parse as parsePseudocode, Interpreter } from '../interpreter';
+import { describe, it, expect } from "vitest";
+import { parseRequirement } from "./parser";
+import { generatePseudocodeWatchdog } from "./codegenPseudocode";
+import {
+  AutonomousActivityContext,
+  UserInteractionContext,
+} from "./generated/RequirementParser";
+import { parse as parsePseudocode, Interpreter } from "../interpreter";
 
 function generate(source: string) {
   const { tree, errors } = parseRequirement(source);
   expect(errors).toEqual([]);
   const req = tree.requirement(0)!;
-  return generatePseudocodeWatchdog(req as AutonomousActivityContext | UserInteractionContext, source);
+  return generatePseudocodeWatchdog(
+    req as AutonomousActivityContext | UserInteractionContext,
+    source,
+  );
 }
 
 // Actually runs the generated example through the real interpreter (not the
@@ -22,7 +28,7 @@ async function runPseudocode(source: string): Promise<string> {
   const interpreter = new Interpreter(
     {
       onOutput: (text) => output.push(text),
-      onInputRequest: () => queueMicrotask(() => interpreter.provideInput('')),
+      onInputRequest: () => queueMicrotask(() => interpreter.provideInput("")),
       onInputComplete: () => {},
       onComplete: () => {},
       onError: () => {},
@@ -30,86 +36,105 @@ async function runPseudocode(source: string): Promise<string> {
     controller.signal,
   );
   await interpreter.execute(tree!);
-  return output.join('\n');
+  return output.join("\n");
 }
 
-describe('generatePseudocodeWatchdog — generated code is valid, runnable pseudocode', () => {
-  it('Type 1 mutation: the example program runs and prints SATISFIED', async () => {
-    const { example } = generate('The System must calculate Total.');
+describe("generatePseudocodeWatchdog — generated code is valid, runnable pseudocode", () => {
+  it("Type 1 mutation: the example program runs and prints SATISFIED", async () => {
+    const { example } = generate("The System must calculate Total.");
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: Total changed from 0 to 15');
+    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
   });
 
-  it('Type 1 output: the example program runs and prints SATISFIED', async () => {
-    const { example } = generate('The System must OUTPUT Message.');
+  it("Type 1 output: the example program runs and prints SATISFIED", async () => {
+    const { example } = generate("The System must OUTPUT Message.");
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: Message');
-    expect(output).toContain('was printed via OUTPUT');
+    expect(output).toContain("SATISFIED: Message");
+    expect(output).toContain("was printed via OUTPUT");
   });
 
-  it('Type 2: the example program runs and prints SATISFIED (input taken, object changed)', async () => {
-    const { example } = generate('The System must offer the user the possibility to open Total.');
+  it("Type 2: the example program runs and prints SATISFIED (input taken, object changed)", async () => {
+    const { example } = generate(
+      "The System must offer the user the possibility to open Total.",
+    );
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: input was requested and Total changed from 0 to 15');
+    expect(output).toContain(
+      "SATISFIED: input was requested and Total changed from 0 to 15",
+    );
   });
 
-  it('a hand-modified copy of the mutation example prints VIOLATED when the object never changes', async () => {
-    const { example } = generate('The System must calculate Total.');
+  it("a hand-modified copy of the mutation example prints VIOLATED when the object never changes", async () => {
+    const { example } = generate("The System must calculate Total.");
     // Remove the FOR loop body's mutation so Total never actually changes.
-    const brokenExample = example.replace('    Total <- Total + i\n', '');
+    const brokenExample = example.replace("    Total <- Total + i\n", "");
     const output = await runPseudocode(brokenExample);
-    expect(output).toContain('VIOLATED: Total went from 0 to 0, which is not a change');
+    expect(output).toContain(
+      "VIOLATED: Total went from 0 to 0, which is not a change",
+    );
   });
 
-  it('a hand-modified copy of the Type 2 example prints VIOLATED when no input was taken', async () => {
-    const { example } = generate('The System must offer the user the possibility to open Total.');
-    const brokenExample = example.replace('INPUT Choice\n', '').replace('Watchdog_InputTaken <- "TRUE"\n', '');
+  it("a hand-modified copy of the Type 2 example prints VIOLATED when no input was taken", async () => {
+    const { example } = generate(
+      "The System must offer the user the possibility to open Total.",
+    );
+    const brokenExample = example
+      .replace("INPUT Choice\n", "")
+      .replace('Watchdog_InputTaken <- "TRUE"\n', "");
     const output = await runPseudocode(brokenExample);
-    expect(output).toContain('VIOLATED: no input was ever requested, so no interaction was offered');
+    expect(output).toContain(
+      "VIOLATED: no input was ever requested, so no interaction was offered",
+    );
   });
 
-  it('generates an explanatory comment (no procedure) for a verb outside the glossary', () => {
-    const { code } = generate('The System must invoke Total.');
-    expect(code).toContain('is not in the watchdog\'s verb glossary');
-    expect(code).not.toContain('PROCEDURE');
+  it("generates an explanatory comment (no procedure) for a verb outside the glossary", () => {
+    const { code } = generate("The System must invoke Total.");
+    expect(code).toContain("is not in the watchdog's verb glossary");
+    expect(code).not.toContain("PROCEDURE");
   });
 
-  it('the reusable code block for Type 1 contains a PROCEDURE and wiring instructions', () => {
-    const { code } = generate('The System must calculate Total.');
-    expect(code).toContain('PROCEDURE Watchdog_Total');
-    expect(code).toContain('ENDPROCEDURE');
-    expect(code).toContain('CALL Watchdog_Total(');
+  it("the reusable code block for Type 1 contains a PROCEDURE and wiring instructions", () => {
+    const { code } = generate("The System must calculate Total.");
+    expect(code).toContain("PROCEDURE Watchdog_Total");
+    expect(code).toContain("ENDPROCEDURE");
+    expect(code).toContain("CALL Watchdog_Total(");
   });
 
-  it('increase: the example program runs and prints SATISFIED', async () => {
-    const { example } = generate('The System must increment Total.');
+  it("increase: the example program runs and prints SATISFIED", async () => {
+    const { example } = generate("The System must increment Total.");
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: Total increased from 0 to 15');
+    expect(output).toContain("SATISFIED: Total increased from 0 to 15");
   });
 
-  it('decrease: the example program runs and prints SATISFIED (a genuine decrease, not just a change)', async () => {
-    const { example } = generate('The System must reduce Total.');
+  it("decrease: the example program runs and prints SATISFIED (a genuine decrease, not just a change)", async () => {
+    const { example } = generate("The System must reduce Total.");
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: Total decreased from 20 to 5');
+    expect(output).toContain("SATISFIED: Total decreased from 20 to 5");
   });
 
-  it('increase: a hand-modified copy prints VIOLATED when the value actually decreases', async () => {
-    const { example } = generate('The System must increment Total.');
-    const brokenExample = example.replace('Total <- Total + i', 'Total <- Total - i');
+  it("increase: a hand-modified copy prints VIOLATED when the value actually decreases", async () => {
+    const { example } = generate("The System must increment Total.");
+    const brokenExample = example.replace(
+      "Total <- Total + i",
+      "Total <- Total - i",
+    );
     const output = await runPseudocode(brokenExample);
-    expect(output).toContain('VIOLATED: Total went from 0 to -15, which is not an increase');
+    expect(output).toContain(
+      "VIOLATED: Total went from 0 to -15, which is not an increase",
+    );
   });
 
-  it('target-value: the example program runs and prints SATISFIED', async () => {
-    const { example } = generate('The System must confirm Verified.');
+  it("target-value: the example program runs and prints SATISFIED", async () => {
+    const { example } = generate("The System must confirm Verified.");
     const output = await runPseudocode(example);
-    expect(output).toContain('SATISFIED: Verified reached the value TRUE');
+    expect(output).toContain("SATISFIED: Verified reached the value TRUE");
   });
 
-  it('target-value: a hand-modified copy prints VIOLATED when the value never becomes TRUE', async () => {
-    const { example } = generate('The System must confirm Verified.');
-    const brokenExample = example.replace('Verified <- "TRUE"\n', '');
+  it("target-value: a hand-modified copy prints VIOLATED when the value never becomes TRUE", async () => {
+    const { example } = generate("The System must confirm Verified.");
+    const brokenExample = example.replace('Verified <- "TRUE"\n', "");
     const output = await runPseudocode(brokenExample);
-    expect(output).toContain('VIOLATED: Verified never became TRUE (last seen as FALSE)');
+    expect(output).toContain(
+      "VIOLATED: Verified never became TRUE (last seen as FALSE)",
+    );
   });
 });

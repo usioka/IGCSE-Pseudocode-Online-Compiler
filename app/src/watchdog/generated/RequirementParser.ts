@@ -17,26 +17,29 @@ export class RequirementParser extends antlr.Parser {
     public static readonly OFFER = 3;
     public static readonly POSSIBILITY = 4;
     public static readonly TO = 5;
-    public static readonly COMMA = 6;
-    public static readonly PERIOD = 7;
-    public static readonly WORD = 8;
-    public static readonly NEWLINE = 9;
-    public static readonly WS = 10;
-    public static readonly LINE_COMMENT = 11;
+    public static readonly AS_SOON_AS = 6;
+    public static readonly AS_LONG_AS = 7;
+    public static readonly COMMA = 8;
+    public static readonly PERIOD = 9;
+    public static readonly WORD = 10;
+    public static readonly NEWLINE = 11;
+    public static readonly WS = 12;
+    public static readonly LINE_COMMENT = 13;
     public static readonly RULE_document = 0;
     public static readonly RULE_requirement = 1;
-    public static readonly RULE_phrase = 2;
+    public static readonly RULE_condition = 2;
+    public static readonly RULE_phrase = 3;
 
     public static readonly literalNames = [
-        null, null, null, null, null, null, "','", "'.'"
+        null, null, null, null, null, null, null, null, "','", "'.'"
     ];
 
     public static readonly symbolicNames = [
-        null, "MUST", "IF", "OFFER", "POSSIBILITY", "TO", "COMMA", "PERIOD", 
-        "WORD", "NEWLINE", "WS", "LINE_COMMENT"
+        null, "MUST", "IF", "OFFER", "POSSIBILITY", "TO", "AS_SOON_AS", 
+        "AS_LONG_AS", "COMMA", "PERIOD", "WORD", "NEWLINE", "WS", "LINE_COMMENT"
     ];
     public static readonly ruleNames = [
-        "document", "requirement", "phrase",
+        "document", "requirement", "condition", "phrase",
     ];
 
     public get grammarFileName(): string { return "Requirement.g4"; }
@@ -61,77 +64,77 @@ export class RequirementParser extends antlr.Parser {
             let alternative: number;
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 9;
+            this.state = 11;
             this.errorHandler.sync(this);
             alternative = this.interpreter.adaptivePredict(this.tokenStream, 0, this.context);
             while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
                 if (alternative === 1) {
                     {
                     {
-                    this.state = 6;
+                    this.state = 8;
                     this.match(RequirementParser.NEWLINE);
                     }
                     }
                 }
-                this.state = 11;
+                this.state = 13;
                 this.errorHandler.sync(this);
                 alternative = this.interpreter.adaptivePredict(this.tokenStream, 0, this.context);
             }
-            this.state = 25;
+            this.state = 27;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            if (_la === 2 || _la === 8) {
+            if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1220) !== 0)) {
                 {
-                this.state = 12;
+                this.state = 14;
                 this.requirement();
-                this.state = 22;
+                this.state = 24;
                 this.errorHandler.sync(this);
                 alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
                 while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
                     if (alternative === 1) {
                         {
                         {
-                        this.state = 16;
+                        this.state = 18;
                         this.errorHandler.sync(this);
                         _la = this.tokenStream.LA(1);
-                        while (_la === 9) {
+                        while (_la === 11) {
                             {
                             {
-                            this.state = 13;
+                            this.state = 15;
                             this.match(RequirementParser.NEWLINE);
                             }
                             }
-                            this.state = 18;
+                            this.state = 20;
                             this.errorHandler.sync(this);
                             _la = this.tokenStream.LA(1);
                         }
-                        this.state = 19;
+                        this.state = 21;
                         this.requirement();
                         }
                         }
                     }
-                    this.state = 24;
+                    this.state = 26;
                     this.errorHandler.sync(this);
                     alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
                 }
                 }
             }
 
-            this.state = 30;
+            this.state = 32;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while (_la === 9) {
+            while (_la === 11) {
                 {
                 {
-                this.state = 27;
+                this.state = 29;
                 this.match(RequirementParser.NEWLINE);
                 }
                 }
-                this.state = 32;
+                this.state = 34;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 33;
+            this.state = 35;
             this.match(RequirementParser.EOF);
             }
         }
@@ -160,29 +163,27 @@ export class RequirementParser extends antlr.Parser {
                 localContext = new AutonomousActivityContext(localContext);
                 this.enterOuterAlt(localContext, 1);
                 {
-                this.state = 39;
+                this.state = 40;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-                if (_la === 2) {
+                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 196) !== 0)) {
                     {
-                    this.state = 35;
-                    this.match(RequirementParser.IF);
-                    this.state = 36;
-                    (localContext as AutonomousActivityContext)._condition = this.phrase();
                     this.state = 37;
+                    this.condition();
+                    this.state = 38;
                     this.match(RequirementParser.COMMA);
                     }
                 }
 
-                this.state = 41;
-                (localContext as AutonomousActivityContext)._subject = this.phrase();
                 this.state = 42;
-                this.match(RequirementParser.MUST);
+                (localContext as AutonomousActivityContext)._subject = this.phrase();
                 this.state = 43;
-                (localContext as AutonomousActivityContext)._verb = this.match(RequirementParser.WORD);
+                this.match(RequirementParser.MUST);
                 this.state = 44;
-                (localContext as AutonomousActivityContext)._object = this.match(RequirementParser.WORD);
+                (localContext as AutonomousActivityContext)._verb = this.match(RequirementParser.WORD);
                 this.state = 45;
+                (localContext as AutonomousActivityContext)._object = this.match(RequirementParser.WORD);
+                this.state = 46;
                 this.match(RequirementParser.PERIOD);
                 }
                 break;
@@ -193,12 +194,10 @@ export class RequirementParser extends antlr.Parser {
                 this.state = 51;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-                if (_la === 2) {
+                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 196) !== 0)) {
                     {
-                    this.state = 47;
-                    this.match(RequirementParser.IF);
                     this.state = 48;
-                    (localContext as UserInteractionContext)._condition = this.phrase();
+                    this.condition();
                     this.state = 49;
                     this.match(RequirementParser.COMMA);
                     }
@@ -239,27 +238,81 @@ export class RequirementParser extends antlr.Parser {
         }
         return localContext;
     }
+    public condition(): ConditionContext {
+        let localContext = new ConditionContext(this.context, this.state);
+        this.enterRule(localContext, 4, RequirementParser.RULE_condition);
+        try {
+            this.state = 71;
+            this.errorHandler.sync(this);
+            switch (this.tokenStream.LA(1)) {
+            case RequirementParser.IF:
+                localContext = new LogicalConditionContext(localContext);
+                this.enterOuterAlt(localContext, 1);
+                {
+                this.state = 65;
+                this.match(RequirementParser.IF);
+                this.state = 66;
+                (localContext as LogicalConditionContext)._text = this.phrase();
+                }
+                break;
+            case RequirementParser.AS_SOON_AS:
+                localContext = new EventConditionContext(localContext);
+                this.enterOuterAlt(localContext, 2);
+                {
+                this.state = 67;
+                this.match(RequirementParser.AS_SOON_AS);
+                this.state = 68;
+                (localContext as EventConditionContext)._text = this.phrase();
+                }
+                break;
+            case RequirementParser.AS_LONG_AS:
+                localContext = new DurationConditionContext(localContext);
+                this.enterOuterAlt(localContext, 3);
+                {
+                this.state = 69;
+                this.match(RequirementParser.AS_LONG_AS);
+                this.state = 70;
+                (localContext as DurationConditionContext)._text = this.phrase();
+                }
+                break;
+            default:
+                throw new antlr.NoViableAltException(this);
+            }
+        }
+        catch (re) {
+            if (re instanceof antlr.RecognitionException) {
+                this.errorHandler.reportError(this, re);
+                this.errorHandler.recover(this, re);
+            } else {
+                throw re;
+            }
+        }
+        finally {
+            this.exitRule();
+        }
+        return localContext;
+    }
     public phrase(): PhraseContext {
         const localContext = new PhraseContext(this.context, this.state);
-        this.enterRule(localContext, 4, RequirementParser.RULE_phrase);
+        this.enterRule(localContext, 6, RequirementParser.RULE_phrase);
         let _la: number;
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 66;
+            this.state = 74;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             do {
                 {
                 {
-                this.state = 65;
+                this.state = 73;
                 this.match(RequirementParser.WORD);
                 }
                 }
-                this.state = 68;
+                this.state = 76;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-            } while (_la === 8);
+            } while (_la === 10);
             }
         }
         catch (re) {
@@ -277,29 +330,31 @@ export class RequirementParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,11,71,2,0,7,0,2,1,7,1,2,2,7,2,1,0,5,0,8,8,0,10,0,12,0,11,9,0,
-        1,0,1,0,5,0,15,8,0,10,0,12,0,18,9,0,1,0,5,0,21,8,0,10,0,12,0,24,
-        9,0,3,0,26,8,0,1,0,5,0,29,8,0,10,0,12,0,32,9,0,1,0,1,0,1,1,1,1,1,
-        1,1,1,3,1,40,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,52,
-        8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,64,8,1,1,2,4,2,67,
-        8,2,11,2,12,2,68,1,2,0,0,3,0,2,4,0,0,76,0,9,1,0,0,0,2,63,1,0,0,0,
-        4,66,1,0,0,0,6,8,5,9,0,0,7,6,1,0,0,0,8,11,1,0,0,0,9,7,1,0,0,0,9,
-        10,1,0,0,0,10,25,1,0,0,0,11,9,1,0,0,0,12,22,3,2,1,0,13,15,5,9,0,
-        0,14,13,1,0,0,0,15,18,1,0,0,0,16,14,1,0,0,0,16,17,1,0,0,0,17,19,
-        1,0,0,0,18,16,1,0,0,0,19,21,3,2,1,0,20,16,1,0,0,0,21,24,1,0,0,0,
-        22,20,1,0,0,0,22,23,1,0,0,0,23,26,1,0,0,0,24,22,1,0,0,0,25,12,1,
-        0,0,0,25,26,1,0,0,0,26,30,1,0,0,0,27,29,5,9,0,0,28,27,1,0,0,0,29,
-        32,1,0,0,0,30,28,1,0,0,0,30,31,1,0,0,0,31,33,1,0,0,0,32,30,1,0,0,
-        0,33,34,5,0,0,1,34,1,1,0,0,0,35,36,5,2,0,0,36,37,3,4,2,0,37,38,5,
-        6,0,0,38,40,1,0,0,0,39,35,1,0,0,0,39,40,1,0,0,0,40,41,1,0,0,0,41,
-        42,3,4,2,0,42,43,5,1,0,0,43,44,5,8,0,0,44,45,5,8,0,0,45,46,5,7,0,
-        0,46,64,1,0,0,0,47,48,5,2,0,0,48,49,3,4,2,0,49,50,5,6,0,0,50,52,
-        1,0,0,0,51,47,1,0,0,0,51,52,1,0,0,0,52,53,1,0,0,0,53,54,3,4,2,0,
-        54,55,5,1,0,0,55,56,5,3,0,0,56,57,3,4,2,0,57,58,5,4,0,0,58,59,5,
-        5,0,0,59,60,5,8,0,0,60,61,5,8,0,0,61,62,5,7,0,0,62,64,1,0,0,0,63,
-        39,1,0,0,0,63,51,1,0,0,0,64,3,1,0,0,0,65,67,5,8,0,0,66,65,1,0,0,
-        0,67,68,1,0,0,0,68,66,1,0,0,0,68,69,1,0,0,0,69,5,1,0,0,0,9,9,16,
-        22,25,30,39,51,63,68
+        4,1,13,79,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,1,0,5,0,10,8,0,10,0,12,
+        0,13,9,0,1,0,1,0,5,0,17,8,0,10,0,12,0,20,9,0,1,0,5,0,23,8,0,10,0,
+        12,0,26,9,0,3,0,28,8,0,1,0,5,0,31,8,0,10,0,12,0,34,9,0,1,0,1,0,1,
+        1,1,1,1,1,3,1,41,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,52,
+        8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,64,8,1,1,2,1,2,1,
+        2,1,2,1,2,1,2,3,2,72,8,2,1,3,4,3,75,8,3,11,3,12,3,76,1,3,0,0,4,0,
+        2,4,6,0,0,85,0,11,1,0,0,0,2,63,1,0,0,0,4,71,1,0,0,0,6,74,1,0,0,0,
+        8,10,5,11,0,0,9,8,1,0,0,0,10,13,1,0,0,0,11,9,1,0,0,0,11,12,1,0,0,
+        0,12,27,1,0,0,0,13,11,1,0,0,0,14,24,3,2,1,0,15,17,5,11,0,0,16,15,
+        1,0,0,0,17,20,1,0,0,0,18,16,1,0,0,0,18,19,1,0,0,0,19,21,1,0,0,0,
+        20,18,1,0,0,0,21,23,3,2,1,0,22,18,1,0,0,0,23,26,1,0,0,0,24,22,1,
+        0,0,0,24,25,1,0,0,0,25,28,1,0,0,0,26,24,1,0,0,0,27,14,1,0,0,0,27,
+        28,1,0,0,0,28,32,1,0,0,0,29,31,5,11,0,0,30,29,1,0,0,0,31,34,1,0,
+        0,0,32,30,1,0,0,0,32,33,1,0,0,0,33,35,1,0,0,0,34,32,1,0,0,0,35,36,
+        5,0,0,1,36,1,1,0,0,0,37,38,3,4,2,0,38,39,5,8,0,0,39,41,1,0,0,0,40,
+        37,1,0,0,0,40,41,1,0,0,0,41,42,1,0,0,0,42,43,3,6,3,0,43,44,5,1,0,
+        0,44,45,5,10,0,0,45,46,5,10,0,0,46,47,5,9,0,0,47,64,1,0,0,0,48,49,
+        3,4,2,0,49,50,5,8,0,0,50,52,1,0,0,0,51,48,1,0,0,0,51,52,1,0,0,0,
+        52,53,1,0,0,0,53,54,3,6,3,0,54,55,5,1,0,0,55,56,5,3,0,0,56,57,3,
+        6,3,0,57,58,5,4,0,0,58,59,5,5,0,0,59,60,5,10,0,0,60,61,5,10,0,0,
+        61,62,5,9,0,0,62,64,1,0,0,0,63,40,1,0,0,0,63,51,1,0,0,0,64,3,1,0,
+        0,0,65,66,5,2,0,0,66,72,3,6,3,0,67,68,5,6,0,0,68,72,3,6,3,0,69,70,
+        5,7,0,0,70,72,3,6,3,0,71,65,1,0,0,0,71,67,1,0,0,0,71,69,1,0,0,0,
+        72,5,1,0,0,0,73,75,5,10,0,0,74,73,1,0,0,0,75,76,1,0,0,0,76,74,1,
+        0,0,0,76,77,1,0,0,0,77,7,1,0,0,0,10,11,18,24,27,32,40,51,63,71,76
     ];
 
     private static __ATN: antlr.ATN;
@@ -381,7 +436,6 @@ export class RequirementContext extends antlr.ParserRuleContext {
     }
 }
 export class AutonomousActivityContext extends RequirementContext {
-    public _condition?: PhraseContext;
     public _subject?: PhraseContext;
     public _verb?: Token | null;
     public _object?: Token | null;
@@ -395,14 +449,8 @@ export class AutonomousActivityContext extends RequirementContext {
     public PERIOD(): antlr.TerminalNode {
         return this.getToken(RequirementParser.PERIOD, 0)!;
     }
-    public phrase(): PhraseContext[];
-    public phrase(i: number): PhraseContext | null;
-    public phrase(i?: number): PhraseContext[] | PhraseContext | null {
-        if (i === undefined) {
-            return this.getRuleContexts(PhraseContext);
-        }
-
-        return this.getRuleContext(i, PhraseContext);
+    public phrase(): PhraseContext {
+        return this.getRuleContext(0, PhraseContext)!;
     }
     public WORD(): antlr.TerminalNode[];
     public WORD(i: number): antlr.TerminalNode | null;
@@ -413,8 +461,8 @@ export class AutonomousActivityContext extends RequirementContext {
     		return this.getToken(RequirementParser.WORD, i);
     	}
     }
-    public IF(): antlr.TerminalNode | null {
-        return this.getToken(RequirementParser.IF, 0);
+    public condition(): ConditionContext | null {
+        return this.getRuleContext(0, ConditionContext);
     }
     public COMMA(): antlr.TerminalNode | null {
         return this.getToken(RequirementParser.COMMA, 0);
@@ -438,7 +486,6 @@ export class AutonomousActivityContext extends RequirementContext {
     }
 }
 export class UserInteractionContext extends RequirementContext {
-    public _condition?: PhraseContext;
     public _subject?: PhraseContext;
     public _recipient?: PhraseContext;
     public _verb?: Token | null;
@@ -480,8 +527,8 @@ export class UserInteractionContext extends RequirementContext {
     		return this.getToken(RequirementParser.WORD, i);
     	}
     }
-    public IF(): antlr.TerminalNode | null {
-        return this.getToken(RequirementParser.IF, 0);
+    public condition(): ConditionContext | null {
+        return this.getRuleContext(0, ConditionContext);
     }
     public COMMA(): antlr.TerminalNode | null {
         return this.getToken(RequirementParser.COMMA, 0);
@@ -499,6 +546,109 @@ export class UserInteractionContext extends RequirementContext {
     public override accept<Result>(visitor: RequirementVisitor<Result>): Result | null {
         if (visitor.visitUserInteraction) {
             return visitor.visitUserInteraction(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+
+
+export class ConditionContext extends antlr.ParserRuleContext {
+    public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+        super(parent, invokingState);
+    }
+    public override get ruleIndex(): number {
+        return RequirementParser.RULE_condition;
+    }
+    public override copyFrom(ctx: ConditionContext): void {
+        super.copyFrom(ctx);
+    }
+}
+export class EventConditionContext extends ConditionContext {
+    public _text?: PhraseContext;
+    public constructor(ctx: ConditionContext) {
+        super(ctx.parent, ctx.invokingState);
+        super.copyFrom(ctx);
+    }
+    public AS_SOON_AS(): antlr.TerminalNode {
+        return this.getToken(RequirementParser.AS_SOON_AS, 0)!;
+    }
+    public phrase(): PhraseContext {
+        return this.getRuleContext(0, PhraseContext)!;
+    }
+    public override enterRule(listener: RequirementListener): void {
+        if(listener.enterEventCondition) {
+             listener.enterEventCondition(this);
+        }
+    }
+    public override exitRule(listener: RequirementListener): void {
+        if(listener.exitEventCondition) {
+             listener.exitEventCondition(this);
+        }
+    }
+    public override accept<Result>(visitor: RequirementVisitor<Result>): Result | null {
+        if (visitor.visitEventCondition) {
+            return visitor.visitEventCondition(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+export class DurationConditionContext extends ConditionContext {
+    public _text?: PhraseContext;
+    public constructor(ctx: ConditionContext) {
+        super(ctx.parent, ctx.invokingState);
+        super.copyFrom(ctx);
+    }
+    public AS_LONG_AS(): antlr.TerminalNode {
+        return this.getToken(RequirementParser.AS_LONG_AS, 0)!;
+    }
+    public phrase(): PhraseContext {
+        return this.getRuleContext(0, PhraseContext)!;
+    }
+    public override enterRule(listener: RequirementListener): void {
+        if(listener.enterDurationCondition) {
+             listener.enterDurationCondition(this);
+        }
+    }
+    public override exitRule(listener: RequirementListener): void {
+        if(listener.exitDurationCondition) {
+             listener.exitDurationCondition(this);
+        }
+    }
+    public override accept<Result>(visitor: RequirementVisitor<Result>): Result | null {
+        if (visitor.visitDurationCondition) {
+            return visitor.visitDurationCondition(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+export class LogicalConditionContext extends ConditionContext {
+    public _text?: PhraseContext;
+    public constructor(ctx: ConditionContext) {
+        super(ctx.parent, ctx.invokingState);
+        super.copyFrom(ctx);
+    }
+    public IF(): antlr.TerminalNode {
+        return this.getToken(RequirementParser.IF, 0)!;
+    }
+    public phrase(): PhraseContext {
+        return this.getRuleContext(0, PhraseContext)!;
+    }
+    public override enterRule(listener: RequirementListener): void {
+        if(listener.enterLogicalCondition) {
+             listener.enterLogicalCondition(this);
+        }
+    }
+    public override exitRule(listener: RequirementListener): void {
+        if(listener.exitLogicalCondition) {
+             listener.exitLogicalCondition(this);
+        }
+    }
+    public override accept<Result>(visitor: RequirementVisitor<Result>): Result | null {
+        if (visitor.visitLogicalCondition) {
+            return visitor.visitLogicalCondition(this);
         } else {
             return visitor.visitChildren(this);
         }

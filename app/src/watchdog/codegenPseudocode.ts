@@ -1,5 +1,9 @@
 import {
   AutonomousActivityContext,
+  ConditionContext,
+  DurationConditionContext,
+  EventConditionContext,
+  LogicalConditionContext,
   UserInteractionContext,
 } from "./generated/RequirementParser";
 import { VERB_GLOSSARY, VerbCategory } from "./verdict";
@@ -9,6 +13,62 @@ type RequirementCtx = AutonomousActivityContext | UserInteractionContext;
 export interface PseudocodeWatchdog {
   code: string;
   example: string;
+}
+
+type BedingungsPath = "falls" | "sobald" | "solange";
+
+// logic
+function classifyCondition(condition: ConditionContext): BedingungsPath {
+  if (condition instanceof EventConditionContext) return "sobald";
+  if (condition instanceof DurationConditionContext) return "solange";
+  return "falls";
+}
+
+function conditionPhraseText(condition: ConditionContext, sourceText: string): string {
+  const phrase =
+    condition instanceof EventConditionContext ||
+    condition instanceof DurationConditionContext ||
+    condition instanceof LogicalConditionContext
+      ? condition._text
+      : undefined;
+  if (!phrase) return "";
+  return sourceText.slice(phrase.start!.start, phrase.stop!.stop + 1);
+}
+
+function wrapWithCondition(path: BedingungsPath, conditionText: string, innerLines: string[]): string[] {
+  // as soon as
+  if (path === "sobald") {
+    return [
+      `// as soon as: ${conditionText}`,
+      `// WHILE NOT EventOccurred DO`,
+      `//     ... wait for the event ...`,
+      `// ENDWHILE`,
+      ...innerLines,
+    ];
+  }
+
+  // as long as
+  if (path === "solange") {
+    return [
+      `// as long as: ${conditionText}`,
+      `DECLARE ConditionHolds : BOOLEAN`,
+      `ConditionHolds <- TRUE`,
+      `WHILE ConditionHolds DO`,
+      ...innerLines.map((l) => (l ? "    " + l : l)),
+      `    ConditionHolds <- FALSE   // stop after one pass`,
+      `ENDWHILE`,
+    ];
+  }
+
+  // if
+  return [
+    `// if: ${conditionText}`,
+    `DECLARE ConditionMet : BOOLEAN`,
+    `ConditionMet <- TRUE`,
+    `IF ConditionMet THEN`,
+    ...innerLines.map((l) => (l ? "    " + l : l)),
+    `ENDIF`,
+  ];
 }
 
 interface CategoryDescriptor {
@@ -24,6 +84,7 @@ function procName(object: string): string {
   return `Watchdog_${object}`;
 }
 
+// mutation / increase / decrease
 const mutationLike = (
   comparison: "<>" | ">" | "<",
   verbForm: string,
@@ -82,6 +143,7 @@ ENDPROCEDURE`,
     `Watchdog_InputTaken, Watchdog_${object}_Initial, ${object}`,
 });
 
+// output
 const outputDescriptor: CategoryDescriptor = {
   procedure: (object) => `PROCEDURE ${procName(object)}(WasOutput : STRING)
     IF WasOutput = "TRUE" THEN
@@ -132,6 +194,7 @@ ENDPROCEDURE`,
     `Watchdog_InputTaken, Watchdog_${object}_WasOutput`,
 };
 
+// target value
 const targetValueDescriptor: CategoryDescriptor = {
   procedure: (object) => `PROCEDURE ${procName(object)}(CurrentValue : STRING)
     IF CurrentValue = "TRUE" THEN
@@ -181,6 +244,7 @@ const CATEGORY_PSEUDOCODE: Record<VerbCategory, CategoryDescriptor> = {
   targetValue: targetValueDescriptor,
 };
 
+// unknown verb
 function inconclusiveStub(
   verb: string,
   sourceText: string,
@@ -196,6 +260,7 @@ function inconclusiveStub(
   return { code: comment, example: comment };
 }
 
+// req
 export function generatePseudocodeWatchdog(
   ctx: RequirementCtx,
   sourceText: string,
@@ -209,7 +274,7 @@ export function generatePseudocodeWatchdog(
   const d = CATEGORY_PSEUDOCODE[category];
   const isType2 = ctx instanceof UserInteractionContext;
 
-  const exampleLines = [
+  let exampleLines = [
     isType2 ? d.type2Procedure(object) : d.procedure(object),
     "",
     ...(isType2
@@ -221,15 +286,25 @@ export function generatePseudocodeWatchdog(
     ...d.exampleSetup(object, isType2),
     `CALL ${procName(object)}(${isType2 ? d.type2CallArgs(object) : d.callArgs(object)})`,
   ];
+
+  const conditionCtx = ctx.condition();
+  const conditionText = conditionCtx ? conditionPhraseText(conditionCtx, sourceText) : null;
+  const bedingungsPath = conditionCtx ? classifyCondition(conditionCtx) : null;
+  if (conditionText && bedingungsPath) {
+    exampleLines = wrapWithCondition(bedingungsPath, conditionText, exampleLines);
+  }
+
   const requirementLine = `The System ${isType2 ? "must offer the user the possibility to " : "must "}${verb} ${object}.`;
   const example = `// Requirement: ${requirementLine}\n${exampleLines.join("\n")}\n`;
+
+  const conditionNote = bedingungsPath ? `// condition: ${bedingungsPath}\n//\n` : "";
 
   if (!isType2) {
     return {
       code: `// Requirement: ${sourceText.trim()}
 // FunktionsMASTeR Type 1 — autonomous system activity
 //
-${d.wiring(object, verb)}
+${conditionNote}${d.wiring(object, verb)}
 
 ${d.procedure(object)}`,
       example,
@@ -240,7 +315,7 @@ ${d.procedure(object)}`,
     code: `// Requirement: ${sourceText.trim()}
 // FunktionsMASTeR Type 2 — user interaction
 //
-// 1) Declare this flag near the top of your program:
+${conditionNote}// 1) Declare this flag near the top of your program:
 // DECLARE Watchdog_InputTaken : STRING
 // Watchdog_InputTaken <- "FALSE"
 //

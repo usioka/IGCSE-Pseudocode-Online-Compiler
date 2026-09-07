@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import { parseRequirement } from "./parser";
 import {
   AutonomousActivityContext,
+  DurationConditionContext,
+  EventConditionContext,
+  LogicalConditionContext,
   UserInteractionContext,
 } from "./generated/RequirementParser";
 
@@ -34,15 +37,18 @@ describe("Requirement grammar — Type 1 (autonomous system activity)", () => {
     expect(req._subject!.getText()).toBe("TheSystem");
     expect(req._verb!.text).toBe("LogEvent");
     expect(req._object!.text).toBe("Motion");
-    expect(req.IF()).toBeNull();
+    expect(req.condition()).toBeNull();
   });
 
-  it("parses a leading condition clause", () => {
+  it("parses a leading logical (IF) condition clause", () => {
     const req = okAutonomous(
       "If the sensor detects motion, the System must LogEvent Motion.",
     );
-    expect(req.IF()).not.toBeNull();
-    expect(req._condition!.getText()).toBe("thesensordetectsmotion");
+    const condition = req.condition();
+    expect(condition).toBeInstanceOf(LogicalConditionContext);
+    expect((condition as LogicalConditionContext)._text!.getText()).toBe(
+      "thesensordetectsmotion",
+    );
     expect(req._subject!.getText()).toBe("theSystem");
   });
 
@@ -107,7 +113,7 @@ describe("Requirement grammar — Type 2 (user interaction)", () => {
     const req = okInteraction(
       "If the sensor recognizes the person as access-permitted, the Smart-Home-System must offer the authorized person the possibility to open Door.",
     );
-    expect(req.IF()).not.toBeNull();
+    expect(req.condition()).toBeInstanceOf(LogicalConditionContext);
     expect(req._verb!.text).toBe("open");
   });
 
@@ -135,5 +141,38 @@ describe("Requirement grammar — Type 2 (user interaction)", () => {
     expect(tree.requirement().length).toBe(2);
     expect(tree.requirement(0)).toBeInstanceOf(AutonomousActivityContext);
     expect(tree.requirement(1)).toBeInstanceOf(UserInteractionContext);
+  });
+});
+
+describe("Requirement grammar — BedingungsMASTER condition types", () => {
+  it('parses "As soon as ..." as an event condition', () => {
+    const req = okAutonomous(
+      "As soon as the sensor detects motion, the System must LogEvent Motion.",
+    );
+    const condition = req.condition();
+    expect(condition).toBeInstanceOf(EventConditionContext);
+    expect((condition as EventConditionContext)._text!.getText()).toBe(
+      "thesensordetectsmotion",
+    );
+  });
+
+  it('parses "As long as ..." as a duration condition', () => {
+    const req = okAutonomous(
+      "As long as the door is open, the System must LogEvent Motion.",
+    );
+    const condition = req.condition();
+    expect(condition).toBeInstanceOf(DurationConditionContext);
+    expect((condition as DurationConditionContext)._text!.getText()).toBe(
+      "thedoorisopen",
+    );
+  });
+
+  it('a standalone word ending in "As" still lexes as an ordinary word, not part of a keyword', () => {
+    const req = okAutonomous("The System must LogEvent TotalAs.");
+    expect(req._object!.text).toBe("TotalAs");
+  });
+
+  it("rejects wrong word order (soon/as swapped)", () => {
+    rejected("As the soon sensor detects motion, the System must LogEvent Motion.");
   });
 });

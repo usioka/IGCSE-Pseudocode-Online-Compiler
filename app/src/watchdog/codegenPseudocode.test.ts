@@ -138,3 +138,58 @@ describe("generatePseudocodeWatchdog — generated code is valid, runnable pseud
     );
   });
 });
+
+describe("generatePseudocodeWatchdog — BedingungsMASTER condition classification", () => {
+  it("an unconditioned requirement is unaffected (no wrapping at all)", async () => {
+    const { code, example } = generate("The System must calculate Total.");
+    expect(code).not.toContain("BedingungsMASTER");
+    expect(example).not.toContain("BedingungsMASTER");
+    const output = await runPseudocode(example);
+    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+  });
+
+  it("a plain condition classifies as FALLS and still runs to SATISFIED", async () => {
+    const { code, example } = generate(
+      "If the sensor detects motion, the System must calculate Total.",
+    );
+    expect(code).toContain("// condition: falls");
+    expect(example).toContain('IF ConditionMet THEN');
+    expect(example).toContain('// if: the sensor detects motion');
+    const output = await runPseudocode(example);
+    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+  });
+
+  it('an "As soon as" condition parses as its own grammar node, classifies as SOBALD, and leaves the check runnable, unwrapped', async () => {
+    const { code, example } = generate(
+      "As soon as the sensor detects motion, the System must calculate Total.",
+    );
+    expect(code).toContain("// condition: sobald");
+    expect(example).toContain("// WHILE NOT EventOccurred DO");
+    // The event-wait itself is commented out (not runnable), but the check
+    // below it is untouched, so the example still runs exactly as before.
+    expect(example).not.toContain("\nWHILE NOT EventOccurred");
+    const output = await runPseudocode(example);
+    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+  });
+
+  it('an "As long as" condition parses as its own grammar node, classifies as SOLANGE, and runs inside a WHILE loop', async () => {
+    const { code, example } = generate(
+      "As long as the door is open, the System must calculate Total.",
+    );
+    expect(code).toContain("// condition: solange");
+    expect(example).toContain("WHILE ConditionHolds DO");
+    expect(example).toContain("ENDWHILE");
+    const output = await runPseudocode(example);
+    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+  });
+
+  it("a conditioned Type 2 requirement still wraps correctly and runs", async () => {
+    const { example } = generate(
+      "If the door is closed, the System must offer the user the possibility to open Total.",
+    );
+    const output = await runPseudocode(example);
+    expect(output).toContain(
+      "SATISFIED: input was requested and Total changed from 0 to 15",
+    );
+  });
+});

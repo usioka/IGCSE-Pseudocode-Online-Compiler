@@ -6,6 +6,9 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 import { DocumentContext } from "./RequirementParser.js";
 import { AutonomousActivityContext } from "./RequirementParser.js";
 import { UserInteractionContext } from "./RequirementParser.js";
+import { LogicalConditionContext } from "./RequirementParser.js";
+import { EventConditionContext } from "./RequirementParser.js";
+import { DurationConditionContext } from "./RequirementParser.js";
 import { PhraseContext } from "./RequirementParser.js";
 
 
@@ -37,6 +40,27 @@ export class RequirementVisitor<Result> extends AbstractParseTreeVisitor<Result>
      * @return the visitor result
      */
     visitUserInteraction?: (ctx: UserInteractionContext) => Result;
+    /**
+     * Visit a parse tree produced by the `logicalCondition`
+     * labeled alternative in `RequirementParser.condition`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitLogicalCondition?: (ctx: LogicalConditionContext) => Result;
+    /**
+     * Visit a parse tree produced by the `eventCondition`
+     * labeled alternative in `RequirementParser.condition`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEventCondition?: (ctx: EventConditionContext) => Result;
+    /**
+     * Visit a parse tree produced by the `durationCondition`
+     * labeled alternative in `RequirementParser.condition`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitDurationCondition?: (ctx: DurationConditionContext) => Result;
     /**
      * Visit a parse tree produced by `RequirementParser.phrase`.
      * @param ctx the parse tree

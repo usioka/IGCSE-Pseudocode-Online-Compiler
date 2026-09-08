@@ -167,6 +167,17 @@ describe("Requirement grammar — BedingungsMASTER condition types", () => {
     );
   });
 
+  it('parses "While ..." as an alternative spelling of the duration condition', () => {
+    const req = okAutonomous(
+      "While the door is open, the System must LogEvent Motion.",
+    );
+    const condition = req.condition();
+    expect(condition).toBeInstanceOf(DurationConditionContext);
+    expect((condition as DurationConditionContext)._text!.getText()).toBe(
+      "thedoorisopen",
+    );
+  });
+
   it('a standalone word ending in "As" still lexes as an ordinary word, not part of a keyword', () => {
     const req = okAutonomous("The System must LogEvent TotalAs.");
     expect(req._object!.text).toBe("TotalAs");

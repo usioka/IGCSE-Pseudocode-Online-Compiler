@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { parseRequirement } from "../parser";
 import {
   parse as parsePseudocode,
@@ -29,7 +29,12 @@ function defaultExample(): string {
 
 export default function SophistToWatchdog() {
   const [requirement, setRequirement] = useState(DEFAULT_REQUIREMENT);
-  const [pseudocode, setPseudocode] = useState(defaultExample);
+  const lastAutoLoaded = useRef<string | null>(null);
+  const [pseudocode, setPseudocode] = useState(() => {
+    const initial = defaultExample();
+    lastAutoLoaded.current = initial;
+    return initial;
+  });
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<string[] | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
@@ -58,9 +63,24 @@ export default function SophistToWatchdog() {
     return { errors: [] as string[], entries };
   }, [requirement]);
 
+  // Keep the pseudocode box in sync with the requirement automatically —
+  // but only while it still holds whatever was last auto-loaded, so editing
+  // the requirement doesn't silently clobber hand-edits made to the demo.
+  useEffect(() => {
+    const nextExample = generated.entries[0]?.example;
+    if (!nextExample) return;
+    setPseudocode((current) => {
+      if (current !== lastAutoLoaded.current) return current;
+      lastAutoLoaded.current = nextExample;
+      return nextExample;
+    });
+  }, [generated]);
+
   function useExample() {
-    if (generated.entries.length > 0)
+    if (generated.entries.length > 0) {
+      lastAutoLoaded.current = generated.entries[0].example;
       setPseudocode(generated.entries[0].example);
+    }
   }
 
   async function handleRun() {
@@ -130,7 +150,7 @@ export default function SophistToWatchdog() {
               SOPHIST requirement
             </label>
             <textarea
-              className="w-full h-40 bg-code-bg border border-border rounded p-3 font-mono text-sm text-code-text"
+              className="w-full h-64 bg-code-bg border border-border rounded p-3 font-mono text-sm text-code-text"
               value={requirement}
               onChange={(e) => setRequirement(e.target.value)}
               spellCheck={false}
@@ -169,11 +189,11 @@ export default function SophistToWatchdog() {
                 </button>
               )}
             </div>
-            <div className="h-40 overflow-y-auto bg-code-bg border border-border rounded p-3">
+            <div className="h-96 overflow-y-auto bg-code-bg border border-border rounded p-3">
               {generated.entries.map((entry, i) => (
                 <pre
                   key={i}
-                  className="font-mono text-xs text-code-text whitespace-pre-wrap mb-4 last:mb-0"
+                  className="font-mono text-sm text-code-text whitespace-pre-wrap mb-4 last:mb-0"
                 >
                   {entry.code}
                 </pre>

@@ -6,6 +6,7 @@ import {
   LogicalConditionContext,
   UserInteractionContext,
 } from "./generated/RequirementParser";
+import { RequirementVisitor } from "./generated/RequirementVisitor";
 import { VERB_GLOSSARY, VerbCategory } from "./verdict";
 
 type RequirementCtx = AutonomousActivityContext | UserInteractionContext;
@@ -24,7 +25,10 @@ function classifyCondition(condition: ConditionContext): BedingungsPath {
   return "falls";
 }
 
-function conditionPhraseText(condition: ConditionContext, sourceText: string): string {
+function conditionPhraseText(
+  condition: ConditionContext,
+  sourceText: string,
+): string {
   const phrase =
     condition instanceof EventConditionContext ||
     condition instanceof DurationConditionContext ||
@@ -35,14 +39,28 @@ function conditionPhraseText(condition: ConditionContext, sourceText: string): s
   return sourceText.slice(phrase.start!.start, phrase.stop!.stop + 1);
 }
 
-function wrapWithCondition(path: BedingungsPath, conditionText: string, innerLines: string[]): string[] {
+// Skeletons only, not required to run: the condition's free text is embedded
+// directly in the control-structure header ("IF the sensor detects motion
+// THEN") instead of standing in for it with a hardcoded flag variable — that
+// reads a real boolean/logical expression, which "the sensor detects
+// motion" (a SOPHIST phrase, not a pseudocode expression) generally isn't,
+// so this will usually fail to parse or run as written. That's fine here:
+// the point is showing the shape a condition maps to, not a working demo.
+function wrapWithCondition(
+  path: BedingungsPath,
+  conditionText: string,
+  innerLines: string[],
+): string[] {
   // as soon as
   if (path === "sobald") {
     return [
-      `// as soon as: ${conditionText}`,
-      `// WHILE NOT EventOccurred DO`,
-      `//     ... wait for the event ...`,
-      `// ENDWHILE`,
+      `// 1. as soon as`,
+      `// NOT runnable as written: EventOccurred is never declared, since`,
+      `// pseudocode has no real event/callback mechanism to set it from.`,
+      `WHILE NOT EventOccurred DO`,
+      `    // wait for the event: ${conditionText}`,
+      `ENDWHILE`,
+      `// 2. procedure`,
       ...innerLines,
     ];
   }
@@ -50,25 +68,62 @@ function wrapWithCondition(path: BedingungsPath, conditionText: string, innerLin
   // as long as
   if (path === "solange") {
     return [
-      `// as long as: ${conditionText}`,
-      `DECLARE ConditionHolds : BOOLEAN`,
-      `ConditionHolds <- TRUE`,
-      `WHILE ConditionHolds DO`,
-      ...innerLines.map((l) => (l ? "    " + l : l)),
-      `    ConditionHolds <- FALSE   // stop after one pass`,
+      `// 1. as long as`,
+      `WHILE ${conditionText} DO`,
+      `// 2. procedure`,
+      ...innerLines,
       `ENDWHILE`,
     ];
   }
 
   // if
   return [
-    `// if: ${conditionText}`,
-    `DECLARE ConditionMet : BOOLEAN`,
-    `ConditionMet <- TRUE`,
-    `IF ConditionMet THEN`,
-    ...innerLines.map((l) => (l ? "    " + l : l)),
+    `// 1. if`,
+    `IF ${conditionText} THEN`,
+    `// 2. procedure`,
+    ...innerLines,
     `ENDIF`,
   ];
+}
+
+const PATH_DESCRIPTION: Record<BedingungsPath, string> = {
+  falls: "a logical condition (if) — a plain logical statement",
+  sobald:
+    "an event condition (as soon as) — NOT runnable as written: EventOccurred is never declared, since pseudocode has no real event/callback mechanism to set it from",
+  solange: "a duration condition (as long as)",
+};
+
+/**
+ * The step-1 condition skeleton for the reusable `.code` snippet: one
+ * numbered comment introducing it, then the actual IF/WHILE/ENDIF/ENDWHILE
+ * as real, uncommented pseudocode — not buried in comments like the rest of
+ * the wiring notes, since this is the one part meant to be copied verbatim.
+ * A placeholder line stands in for the real call, which lives in the
+ * student's own program and gets wired up in the numbered steps after this.
+ */
+function conditionCodeStep(
+  path: BedingungsPath,
+  conditionText: string,
+): string {
+  const placeholder = "<the CALL from step 2, and whatever it depends on>";
+  const skeleton =
+    path === "sobald"
+      ? [
+          `WHILE NOT EventOccurred DO`,
+          `    // wait for the event: ${conditionText}`,
+          `ENDWHILE`,
+          placeholder,
+        ]
+      : path === "solange"
+        ? [`WHILE ${conditionText} DO`, `    ${placeholder}`, `ENDWHILE`]
+        : [`IF ${conditionText} THEN`, `    ${placeholder}`, `ENDIF`];
+  return `// 1) This is ${PATH_DESCRIPTION[path]}:\n${skeleton.join("\n")}`;
+}
+
+/** Renumbers "// N)" step comments by a fixed amount — used to make room for the condition step ahead of them. */
+function shiftSteps(text: string, by: number): string {
+  if (by === 0) return text;
+  return text.replace(/\/\/ (\d+)\)/g, (_m, n) => `// ${Number(n) + by})`);
 }
 
 interface CategoryDescriptor {
@@ -265,66 +320,113 @@ export function generatePseudocodeWatchdog(
   ctx: RequirementCtx,
   sourceText: string,
 ): PseudocodeWatchdog {
-  const verb = ctx._verb!.text!;
-  const object = ctx._object!.text!;
-  const category = VERB_GLOSSARY[verb.toLowerCase()];
+  return new PseudocodeGenerator(sourceText).visit(ctx)!;
+}
 
-  if (!category) return inconclusiveStub(verb, sourceText);
-
-  const d = CATEGORY_PSEUDOCODE[category];
-  const isType2 = ctx instanceof UserInteractionContext;
-
-  let exampleLines = [
-    isType2 ? d.type2Procedure(object) : d.procedure(object),
-    "",
-    ...(isType2
-      ? [
-          `DECLARE Watchdog_InputTaken : STRING`,
-          `Watchdog_InputTaken <- "FALSE"`,
-        ]
-      : []),
-    ...d.exampleSetup(object, isType2),
-    `CALL ${procName(object)}(${isType2 ? d.type2CallArgs(object) : d.callArgs(object)})`,
-  ];
-
-  const conditionCtx = ctx.condition();
-  const conditionText = conditionCtx ? conditionPhraseText(conditionCtx, sourceText) : null;
-  const bedingungsPath = conditionCtx ? classifyCondition(conditionCtx) : null;
-  if (conditionText && bedingungsPath) {
-    exampleLines = wrapWithCondition(bedingungsPath, conditionText, exampleLines);
+// A real ANTLR visitor (unlike the original project's Python/flowchart
+// converters, which never subclass their generated Visitor base at all):
+// dispatch to visitAutonomousActivity/visitUserInteraction happens via
+// double dispatch (ctx.accept(this)), not an instanceof check from outside.
+class PseudocodeGenerator extends RequirementVisitor<PseudocodeWatchdog> {
+  constructor(private sourceText: string) {
+    super();
   }
 
-  const requirementLine = `The System ${isType2 ? "must offer the user the possibility to " : "must "}${verb} ${object}.`;
-  const example = `// Requirement: ${requirementLine}\n${exampleLines.join("\n")}\n`;
+  protected override defaultResult(): PseudocodeWatchdog {
+    return { code: "", example: "" };
+  }
 
-  const conditionNote = bedingungsPath ? `// condition: ${bedingungsPath}\n//\n` : "";
+  override visitAutonomousActivity = (
+    ctx: AutonomousActivityContext,
+  ): PseudocodeWatchdog => this.generate(ctx);
 
-  if (!isType2) {
-    return {
-      code: `// Requirement: ${sourceText.trim()}
+  override visitUserInteraction = (
+    ctx: UserInteractionContext,
+  ): PseudocodeWatchdog => this.generate(ctx);
+
+  private generate(ctx: RequirementCtx): PseudocodeWatchdog {
+    const sourceText = this.sourceText;
+    const verb = ctx._verb!.text!;
+    const object = ctx._object!.text!;
+    const category = VERB_GLOSSARY[verb.toLowerCase()];
+
+    if (!category) return inconclusiveStub(verb, sourceText);
+
+    const d = CATEGORY_PSEUDOCODE[category];
+    const isType2 = ctx instanceof UserInteractionContext;
+
+    let exampleLines = [
+      isType2 ? d.type2Procedure(object) : d.procedure(object),
+      "",
+      ...(isType2
+        ? [
+            `DECLARE Watchdog_InputTaken : STRING`,
+            `Watchdog_InputTaken <- "FALSE"`,
+          ]
+        : []),
+      ...d.exampleSetup(object, isType2),
+      `CALL ${procName(object)}(${isType2 ? d.type2CallArgs(object) : d.callArgs(object)})`,
+    ];
+
+    const conditionCtx = ctx.condition();
+    const conditionText = conditionCtx
+      ? conditionPhraseText(conditionCtx, sourceText)
+      : null;
+    const bedingungsPath = conditionCtx
+      ? classifyCondition(conditionCtx)
+      : null;
+    if (conditionText && bedingungsPath) {
+      exampleLines = wrapWithCondition(
+        bedingungsPath,
+        conditionText,
+        exampleLines,
+      );
+    }
+
+    const requirementLine = `The System ${isType2 ? "must offer the user the possibility to " : "must "}${verb} ${object}.`;
+    const example = `// Requirement: ${requirementLine}\n${exampleLines.join("\n")}\n`;
+
+    // Everything below is one continuous numbered sequence, condition included
+    // as step 1 when there is one — not two separate, overlapping "1./2." and
+    // "1)/2)" lists.
+    const hasCondition = Boolean(bedingungsPath && conditionText);
+    const conditionStep = hasCondition
+      ? `${conditionCodeStep(bedingungsPath!, conditionText!)}\n\n`
+      : "";
+    const shift = hasCondition ? 1 : 0;
+
+    if (!isType2) {
+      return {
+        code: `// Requirement: ${sourceText.trim()}
 // FunktionsMASTeR Type 1 — autonomous system activity
 //
-${conditionNote}${d.wiring(object, verb)}
+${conditionStep}${shiftSteps(d.wiring(object, verb), shift)}
 
 ${d.procedure(object)}`,
-      example,
-    };
-  }
+        example,
+      };
+    }
 
-  return {
-    code: `// Requirement: ${sourceText.trim()}
-// FunktionsMASTeR Type 2 — user interaction
-//
-${conditionNote}// 1) Declare this flag near the top of your program:
+    const type2FixedSteps = shiftSteps(
+      `// 1) Declare this flag near the top of your program:
 // DECLARE Watchdog_InputTaken : STRING
 // Watchdog_InputTaken <- "FALSE"
 //
 // 2) Right after any INPUT statement, add:
-// Watchdog_InputTaken <- "TRUE"
+// Watchdog_InputTaken <- "TRUE"`,
+      shift,
+    );
+
+    return {
+      code: `// Requirement: ${sourceText.trim()}
+// FunktionsMASTeR Type 2 — user interaction
 //
-${d.wiring(object, verb).replace(/\/\/ (\d)\)/g, (_m, n) => `// ${Number(n) + 2})`)}
+${conditionStep}${type2FixedSteps}
+//
+${shiftSteps(d.wiring(object, verb), shift + 2)}
 //
 ${d.type2Procedure(object)}`,
-    example,
-  };
+      example,
+    };
+  }
 }

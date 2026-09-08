@@ -19,24 +19,26 @@ export class RequirementParser extends antlr.Parser {
     public static readonly TO = 5;
     public static readonly AS_SOON_AS = 6;
     public static readonly AS_LONG_AS = 7;
-    public static readonly COMMA = 8;
-    public static readonly PERIOD = 9;
-    public static readonly WORD = 10;
-    public static readonly NEWLINE = 11;
-    public static readonly WS = 12;
-    public static readonly LINE_COMMENT = 13;
+    public static readonly WHILE = 8;
+    public static readonly COMMA = 9;
+    public static readonly PERIOD = 10;
+    public static readonly WORD = 11;
+    public static readonly NEWLINE = 12;
+    public static readonly WS = 13;
+    public static readonly LINE_COMMENT = 14;
     public static readonly RULE_document = 0;
     public static readonly RULE_requirement = 1;
     public static readonly RULE_condition = 2;
     public static readonly RULE_phrase = 3;
 
     public static readonly literalNames = [
-        null, null, null, null, null, null, null, null, "','", "'.'"
+        null, null, null, null, null, null, null, null, null, "','", "'.'"
     ];
 
     public static readonly symbolicNames = [
         null, "MUST", "IF", "OFFER", "POSSIBILITY", "TO", "AS_SOON_AS", 
-        "AS_LONG_AS", "COMMA", "PERIOD", "WORD", "NEWLINE", "WS", "LINE_COMMENT"
+        "AS_LONG_AS", "WHILE", "COMMA", "PERIOD", "WORD", "NEWLINE", "WS", 
+        "LINE_COMMENT"
     ];
     public static readonly ruleNames = [
         "document", "requirement", "condition", "phrase",
@@ -83,7 +85,7 @@ export class RequirementParser extends antlr.Parser {
             this.state = 27;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1220) !== 0)) {
+            if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2500) !== 0)) {
                 {
                 this.state = 14;
                 this.requirement();
@@ -97,7 +99,7 @@ export class RequirementParser extends antlr.Parser {
                         this.state = 18;
                         this.errorHandler.sync(this);
                         _la = this.tokenStream.LA(1);
-                        while (_la === 11) {
+                        while (_la === 12) {
                             {
                             {
                             this.state = 15;
@@ -123,7 +125,7 @@ export class RequirementParser extends antlr.Parser {
             this.state = 32;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while (_la === 11) {
+            while (_la === 12) {
                 {
                 {
                 this.state = 29;
@@ -166,7 +168,7 @@ export class RequirementParser extends antlr.Parser {
                 this.state = 40;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 196) !== 0)) {
+                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 452) !== 0)) {
                     {
                     this.state = 37;
                     this.condition();
@@ -194,7 +196,7 @@ export class RequirementParser extends antlr.Parser {
                 this.state = 51;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 196) !== 0)) {
+                if ((((_la) & ~0x1F) === 0 && ((1 << _la) & 452) !== 0)) {
                     {
                     this.state = 48;
                     this.condition();
@@ -241,6 +243,7 @@ export class RequirementParser extends antlr.Parser {
     public condition(): ConditionContext {
         let localContext = new ConditionContext(this.context, this.state);
         this.enterRule(localContext, 4, RequirementParser.RULE_condition);
+        let _la: number;
         try {
             this.state = 71;
             this.errorHandler.sync(this);
@@ -266,11 +269,19 @@ export class RequirementParser extends antlr.Parser {
                 }
                 break;
             case RequirementParser.AS_LONG_AS:
+            case RequirementParser.WHILE:
                 localContext = new DurationConditionContext(localContext);
                 this.enterOuterAlt(localContext, 3);
                 {
                 this.state = 69;
-                this.match(RequirementParser.AS_LONG_AS);
+                _la = this.tokenStream.LA(1);
+                if(!(_la === 7 || _la === 8)) {
+                this.errorHandler.recoverInline(this);
+                }
+                else {
+                    this.errorHandler.reportMatch(this);
+                    this.consume();
+                }
                 this.state = 70;
                 (localContext as DurationConditionContext)._text = this.phrase();
                 }
@@ -312,7 +323,7 @@ export class RequirementParser extends antlr.Parser {
                 this.state = 76;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-            } while (_la === 10);
+            } while (_la === 11);
             }
         }
         catch (re) {
@@ -330,31 +341,32 @@ export class RequirementParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,13,79,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,1,0,5,0,10,8,0,10,0,12,
+        4,1,14,79,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,1,0,5,0,10,8,0,10,0,12,
         0,13,9,0,1,0,1,0,5,0,17,8,0,10,0,12,0,20,9,0,1,0,5,0,23,8,0,10,0,
         12,0,26,9,0,3,0,28,8,0,1,0,5,0,31,8,0,10,0,12,0,34,9,0,1,0,1,0,1,
         1,1,1,1,1,3,1,41,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,52,
         8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,64,8,1,1,2,1,2,1,
         2,1,2,1,2,1,2,3,2,72,8,2,1,3,4,3,75,8,3,11,3,12,3,76,1,3,0,0,4,0,
-        2,4,6,0,0,85,0,11,1,0,0,0,2,63,1,0,0,0,4,71,1,0,0,0,6,74,1,0,0,0,
-        8,10,5,11,0,0,9,8,1,0,0,0,10,13,1,0,0,0,11,9,1,0,0,0,11,12,1,0,0,
-        0,12,27,1,0,0,0,13,11,1,0,0,0,14,24,3,2,1,0,15,17,5,11,0,0,16,15,
-        1,0,0,0,17,20,1,0,0,0,18,16,1,0,0,0,18,19,1,0,0,0,19,21,1,0,0,0,
-        20,18,1,0,0,0,21,23,3,2,1,0,22,18,1,0,0,0,23,26,1,0,0,0,24,22,1,
-        0,0,0,24,25,1,0,0,0,25,28,1,0,0,0,26,24,1,0,0,0,27,14,1,0,0,0,27,
-        28,1,0,0,0,28,32,1,0,0,0,29,31,5,11,0,0,30,29,1,0,0,0,31,34,1,0,
-        0,0,32,30,1,0,0,0,32,33,1,0,0,0,33,35,1,0,0,0,34,32,1,0,0,0,35,36,
-        5,0,0,1,36,1,1,0,0,0,37,38,3,4,2,0,38,39,5,8,0,0,39,41,1,0,0,0,40,
-        37,1,0,0,0,40,41,1,0,0,0,41,42,1,0,0,0,42,43,3,6,3,0,43,44,5,1,0,
-        0,44,45,5,10,0,0,45,46,5,10,0,0,46,47,5,9,0,0,47,64,1,0,0,0,48,49,
-        3,4,2,0,49,50,5,8,0,0,50,52,1,0,0,0,51,48,1,0,0,0,51,52,1,0,0,0,
-        52,53,1,0,0,0,53,54,3,6,3,0,54,55,5,1,0,0,55,56,5,3,0,0,56,57,3,
-        6,3,0,57,58,5,4,0,0,58,59,5,5,0,0,59,60,5,10,0,0,60,61,5,10,0,0,
-        61,62,5,9,0,0,62,64,1,0,0,0,63,40,1,0,0,0,63,51,1,0,0,0,64,3,1,0,
-        0,0,65,66,5,2,0,0,66,72,3,6,3,0,67,68,5,6,0,0,68,72,3,6,3,0,69,70,
-        5,7,0,0,70,72,3,6,3,0,71,65,1,0,0,0,71,67,1,0,0,0,71,69,1,0,0,0,
-        72,5,1,0,0,0,73,75,5,10,0,0,74,73,1,0,0,0,75,76,1,0,0,0,76,74,1,
-        0,0,0,76,77,1,0,0,0,77,7,1,0,0,0,10,11,18,24,27,32,40,51,63,71,76
+        2,4,6,0,1,1,0,7,8,85,0,11,1,0,0,0,2,63,1,0,0,0,4,71,1,0,0,0,6,74,
+        1,0,0,0,8,10,5,12,0,0,9,8,1,0,0,0,10,13,1,0,0,0,11,9,1,0,0,0,11,
+        12,1,0,0,0,12,27,1,0,0,0,13,11,1,0,0,0,14,24,3,2,1,0,15,17,5,12,
+        0,0,16,15,1,0,0,0,17,20,1,0,0,0,18,16,1,0,0,0,18,19,1,0,0,0,19,21,
+        1,0,0,0,20,18,1,0,0,0,21,23,3,2,1,0,22,18,1,0,0,0,23,26,1,0,0,0,
+        24,22,1,0,0,0,24,25,1,0,0,0,25,28,1,0,0,0,26,24,1,0,0,0,27,14,1,
+        0,0,0,27,28,1,0,0,0,28,32,1,0,0,0,29,31,5,12,0,0,30,29,1,0,0,0,31,
+        34,1,0,0,0,32,30,1,0,0,0,32,33,1,0,0,0,33,35,1,0,0,0,34,32,1,0,0,
+        0,35,36,5,0,0,1,36,1,1,0,0,0,37,38,3,4,2,0,38,39,5,9,0,0,39,41,1,
+        0,0,0,40,37,1,0,0,0,40,41,1,0,0,0,41,42,1,0,0,0,42,43,3,6,3,0,43,
+        44,5,1,0,0,44,45,5,11,0,0,45,46,5,11,0,0,46,47,5,10,0,0,47,64,1,
+        0,0,0,48,49,3,4,2,0,49,50,5,9,0,0,50,52,1,0,0,0,51,48,1,0,0,0,51,
+        52,1,0,0,0,52,53,1,0,0,0,53,54,3,6,3,0,54,55,5,1,0,0,55,56,5,3,0,
+        0,56,57,3,6,3,0,57,58,5,4,0,0,58,59,5,5,0,0,59,60,5,11,0,0,60,61,
+        5,11,0,0,61,62,5,10,0,0,62,64,1,0,0,0,63,40,1,0,0,0,63,51,1,0,0,
+        0,64,3,1,0,0,0,65,66,5,2,0,0,66,72,3,6,3,0,67,68,5,6,0,0,68,72,3,
+        6,3,0,69,70,7,0,0,0,70,72,3,6,3,0,71,65,1,0,0,0,71,67,1,0,0,0,71,
+        69,1,0,0,0,72,5,1,0,0,0,73,75,5,11,0,0,74,73,1,0,0,0,75,76,1,0,0,
+        0,76,74,1,0,0,0,76,77,1,0,0,0,77,7,1,0,0,0,10,11,18,24,27,32,40,
+        51,63,71,76
     ];
 
     private static __ATN: antlr.ATN;
@@ -600,8 +612,11 @@ export class DurationConditionContext extends ConditionContext {
         super(ctx.parent, ctx.invokingState);
         super.copyFrom(ctx);
     }
-    public AS_LONG_AS(): antlr.TerminalNode {
-        return this.getToken(RequirementParser.AS_LONG_AS, 0)!;
+    public AS_LONG_AS(): antlr.TerminalNode | null {
+        return this.getToken(RequirementParser.AS_LONG_AS, 0);
+    }
+    public WHILE(): antlr.TerminalNode | null {
+        return this.getToken(RequirementParser.WHILE, 0);
     }
     public phrase(): PhraseContext {
         return this.getRuleContext(0, PhraseContext)!;

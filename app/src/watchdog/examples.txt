@@ -153,3 +153,46 @@ INPUT Choice
 OUTPUT Door
 req.: The System must offer the user the possibility to open Door.
 res: violated (input was requested, but Door was never assigned)
+
+
+Logic (BedingungsMASTER condition) examples — /sophist-watchdog only.
+verdict.ts never reads the condition, so on /watchdog these three all give
+the exact same result as Scenario 1 (satisfied, Total changed 0 -> 15) — the
+condition only changes anything in the *generated* pseudocode, on
+/sophist-watchdog. Paste req. there; the pseudocode box auto-fills.
+
+None of the three are meant to run as written — they're numbered skeletons
+("// 1. <path>" / "// 2. procedure") showing the shape a condition maps to,
+with its own free text embedded directly as the IF/WHILE's expression (e.g.
+"IF the sensor detects motion THEN"). A SOPHIST phrase generally isn't a
+valid pseudocode expression, so this is expected not to parse or run —
+that's the point, not a bug.
+
+
+17) logic — if (logical condition)
+req.: If the sensor detects motion, the System must calculate Total.
+res: "// 1. if" / "IF the sensor detects motion THEN" / "// 2. procedure" /
+... / "ENDIF". Does not parse as written (multiple bare words aren't a valid
+boolean expression) — shown as a skeleton, not a working demo. On
+/sophist-watchdog's code panel this reads "// 1) This is a logical condition
+(if): ..." followed by the same real, uncommented IF/ENDIF.
+
+
+18) logic — as soon as (event condition)
+req.: As soon as the sensor detects motion, the System must calculate Total.
+res: "// 1. as soon as" / a comment explaining it's not runnable / a real,
+uncommented "WHILE NOT EventOccurred DO ... ENDWHILE" / "// 2. procedure" /
+.... This one *does* parse, but throws immediately if run: "Variable
+'EventOccurred' is not defined" — pseudocode has no real event/callback
+mechanism to set it from. Code panel: "// 1) This is an event condition (as
+soon as): ...".
+
+
+19) logic — as long as (duration condition)
+req.: As long as the door is open, the System must calculate Total.
+res: "// 1. as long as" / "WHILE the door is open DO" / "// 2. procedure" /
+... / "ENDWHILE". Does not parse as written, same reason as the if case.
+Code panel: "// 1) This is a duration condition (as long as): ...".
+"While" also works as an alternative spelling of the same opening keyword
+(e.g. "While the door is open, ..."); it classifies as the same duration
+condition and generates identical output.

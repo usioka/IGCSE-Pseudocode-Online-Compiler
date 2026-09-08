@@ -39,6 +39,14 @@ async function runPseudocode(source: string): Promise<string> {
   return output.join("\n");
 }
 
+// Confirms a skeleton genuinely doesn't parse, rather than just asserting it
+// contains certain text — the same "verify, don't assume" standard applied
+// to the runnable paths above.
+function parseFails(source: string): boolean {
+  const { errors } = parsePseudocode(source);
+  return errors.length > 0;
+}
+
 describe("generatePseudocodeWatchdog — generated code is valid, runnable pseudocode", () => {
   it("Type 1 mutation: the example program runs and prints SATISFIED", async () => {
     const { example } = generate("The System must calculate Total.");
@@ -148,48 +156,80 @@ describe("generatePseudocodeWatchdog — BedingungsMASTER condition classificati
     expect(output).toContain("SATISFIED: Total changed from 0 to 15");
   });
 
-  it("a plain condition classifies as FALLS and still runs to SATISFIED", async () => {
+  it("a plain condition classifies as FALLS and is shown as a numbered, honestly-unrunnable skeleton", async () => {
     const { code, example } = generate(
       "If the sensor detects motion, the System must calculate Total.",
     );
-    expect(code).toContain("// condition: falls");
-    expect(example).toContain('IF ConditionMet THEN');
-    expect(example).toContain('// if: the sensor detects motion');
-    const output = await runPseudocode(example);
-    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+    expect(code).toContain("// 1) This is a logical condition (if)");
+    expect(code).toContain("IF the sensor detects motion THEN");
+    expect(code).not.toContain("// IF the sensor detects motion THEN");
+    expect(code).toContain("// 2) Snapshot Total");
+    expect(example).toContain("// 1. if");
+    expect(example).toContain("IF the sensor detects motion THEN");
+    expect(example).toContain("// 2. procedure");
+    expect(example).toContain("ENDIF");
+    // The condition text is embedded directly as the IF's own expression,
+    // which a SOPHIST phrase generally isn't — this is a skeleton showing
+    // the shape, not a working demo, so it's expected not to parse.
+    expect(parseFails(example)).toBe(true);
   });
 
-  it('an "As soon as" condition parses as its own grammar node, classifies as SOBALD, and leaves the check runnable, unwrapped', async () => {
+  it('an "As soon as" condition classifies as SOBALD and is shown as real, honestly-unrunnable pseudocode', async () => {
     const { code, example } = generate(
       "As soon as the sensor detects motion, the System must calculate Total.",
     );
-    expect(code).toContain("// condition: sobald");
-    expect(example).toContain("// WHILE NOT EventOccurred DO");
-    // The event-wait itself is commented out (not runnable), but the check
-    // below it is untouched, so the example still runs exactly as before.
-    expect(example).not.toContain("\nWHILE NOT EventOccurred");
-    const output = await runPseudocode(example);
-    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+    expect(code).toContain("// 1) This is an event condition (as soon as)");
+    expect(code).toContain("NOT runnable as written");
+    expect(code).toContain("// 2) Snapshot Total");
+    // The skeleton is real, uncommented pseudocode in the reusable snippet too.
+    expect(code).toContain("WHILE NOT EventOccurred DO");
+    expect(code).not.toContain("// WHILE NOT EventOccurred DO");
+    // In the runnable example, the event-wait is real, uncommented pseudocode
+    // syntax — not faked as a comment — so running it fails honestly instead
+    // of silently: EventOccurred is never declared (pseudocode has no real
+    // event/callback mechanism to set it from).
+    expect(example).toContain("WHILE NOT EventOccurred DO");
+    expect(example).not.toContain("// WHILE NOT EventOccurred DO");
+    await expect(runPseudocode(example)).rejects.toThrow("EventOccurred");
   });
 
-  it('an "As long as" condition parses as its own grammar node, classifies as SOLANGE, and runs inside a WHILE loop', async () => {
+  it('an "As long as" condition classifies as SOLANGE and is shown as a numbered, honestly-unrunnable skeleton', async () => {
     const { code, example } = generate(
       "As long as the door is open, the System must calculate Total.",
     );
-    expect(code).toContain("// condition: solange");
-    expect(example).toContain("WHILE ConditionHolds DO");
+    expect(code).toContain("// 1) This is a duration condition (as long as)");
+    expect(code).toContain("WHILE the door is open DO");
+    expect(code).not.toContain("// WHILE the door is open DO");
+    expect(code).toContain("// 2) Snapshot Total");
+    expect(example).toContain("// 1. as long as");
+    expect(example).toContain("WHILE the door is open DO");
+    expect(example).toContain("// 2. procedure");
     expect(example).toContain("ENDWHILE");
-    const output = await runPseudocode(example);
-    expect(output).toContain("SATISFIED: Total changed from 0 to 15");
+    expect(parseFails(example)).toBe(true);
   });
 
-  it("a conditioned Type 2 requirement still wraps correctly and runs", async () => {
+  it('"While ..." is an alternative spelling of "As long as" and generates identical output', () => {
+    // Only the "// Requirement: ..." header differs (it echoes the source
+    // text verbatim); everything generated from the classified condition
+    // itself — the skeleton, the wording, the wiring — must be identical.
+    const asLongAs = generate(
+      "As long as the door is open, the System must calculate Total.",
+    );
+    const whileVersion = generate(
+      "While the door is open, the System must calculate Total.",
+    );
+    const dropHeader = (s: string) => s.split("\n").slice(1).join("\n");
+    expect(dropHeader(whileVersion.code)).toBe(dropHeader(asLongAs.code));
+    expect(dropHeader(whileVersion.example)).toBe(
+      dropHeader(asLongAs.example),
+    );
+  });
+
+  it("a conditioned Type 2 requirement gets the same skeleton treatment", async () => {
     const { example } = generate(
       "If the door is closed, the System must offer the user the possibility to open Total.",
     );
-    const output = await runPseudocode(example);
-    expect(output).toContain(
-      "SATISFIED: input was requested and Total changed from 0 to 15",
-    );
+    expect(example).toContain("IF the door is closed THEN");
+    expect(parseFails(example)).toBe(true);
   });
 });

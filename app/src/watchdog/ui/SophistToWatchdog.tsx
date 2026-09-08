@@ -13,7 +13,8 @@ import {
   UserInteractionContext,
 } from "../generated/RequirementParser";
 
-const DEFAULT_REQUIREMENT = "The System must calculate Total.";
+const DEFAULT_REQUIREMENT =
+  "If the sensor detects motion, the System must calculate Total.";
 
 interface GeneratedEntry {
   text: string;

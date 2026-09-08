@@ -11,9 +11,6 @@ requirement
     | (condition COMMA)? subject=phrase MUST OFFER recipient=phrase POSSIBILITY TO verb=WORD object=WORD PERIOD                  # userInteraction
     ;
 
-// BedingungsMASTER (Rupp & die SOPHISTen, ch. 19): three condition types by
-// opening word. The condition's own content stays free text (WORD+), same
-// as before -- only which keyword opened it is structured.
 condition
     : IF text=phrase                    # logicalCondition
     | AS_SOON_AS text=phrase            # eventCondition

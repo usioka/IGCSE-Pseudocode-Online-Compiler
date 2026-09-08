@@ -17,7 +17,7 @@ public class RequirementParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		MUST=1, IF=2, OFFER=3, POSSIBILITY=4, TO=5, AS_SOON_AS=6, AS_LONG_AS=7, 
-		COMMA=8, PERIOD=9, WORD=10, NEWLINE=11, WS=12, LINE_COMMENT=13;
+		WHILE=8, COMMA=9, PERIOD=10, WORD=11, NEWLINE=12, WS=13, LINE_COMMENT=14;
 	public static final int
 		RULE_document = 0, RULE_requirement = 1, RULE_condition = 2, RULE_phrase = 3;
 	private static String[] makeRuleNames() {
@@ -29,14 +29,14 @@ public class RequirementParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, null, null, null, null, null, null, null, "','", "'.'"
+			null, null, null, null, null, null, null, null, null, "','", "'.'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
 			null, "MUST", "IF", "OFFER", "POSSIBILITY", "TO", "AS_SOON_AS", "AS_LONG_AS", 
-			"COMMA", "PERIOD", "WORD", "NEWLINE", "WS", "LINE_COMMENT"
+			"WHILE", "COMMA", "PERIOD", "WORD", "NEWLINE", "WS", "LINE_COMMENT"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -107,14 +107,6 @@ public class RequirementParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_document; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterDocument(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitDocument(this);
-		}
 	}
 
 	public final DocumentContext document() throws RecognitionException {
@@ -144,7 +136,7 @@ public class RequirementParser extends Parser {
 			setState(27);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 1220L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 2500L) != 0)) {
 				{
 				setState(14);
 				requirement();
@@ -241,14 +233,6 @@ public class RequirementParser extends Parser {
 		}
 		public TerminalNode COMMA() { return getToken(RequirementParser.COMMA, 0); }
 		public AutonomousActivityContext(RequirementContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterAutonomousActivity(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitAutonomousActivity(this);
-		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class UserInteractionContext extends RequirementContext {
@@ -276,14 +260,6 @@ public class RequirementParser extends Parser {
 		}
 		public TerminalNode COMMA() { return getToken(RequirementParser.COMMA, 0); }
 		public UserInteractionContext(RequirementContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterUserInteraction(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitUserInteraction(this);
-		}
 	}
 
 	public final RequirementContext requirement() throws RecognitionException {
@@ -301,7 +277,7 @@ public class RequirementParser extends Parser {
 				setState(40);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 196L) != 0)) {
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 452L) != 0)) {
 					{
 					setState(37);
 					condition();
@@ -329,7 +305,7 @@ public class RequirementParser extends Parser {
 				setState(51);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 196L) != 0)) {
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 452L) != 0)) {
 					{
 					setState(48);
 					condition();
@@ -391,31 +367,16 @@ public class RequirementParser extends Parser {
 			return getRuleContext(PhraseContext.class,0);
 		}
 		public EventConditionContext(ConditionContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterEventCondition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitEventCondition(this);
-		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class DurationConditionContext extends ConditionContext {
 		public PhraseContext text;
 		public TerminalNode AS_LONG_AS() { return getToken(RequirementParser.AS_LONG_AS, 0); }
+		public TerminalNode WHILE() { return getToken(RequirementParser.WHILE, 0); }
 		public PhraseContext phrase() {
 			return getRuleContext(PhraseContext.class,0);
 		}
 		public DurationConditionContext(ConditionContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterDurationCondition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitDurationCondition(this);
-		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class LogicalConditionContext extends ConditionContext {
@@ -425,19 +386,12 @@ public class RequirementParser extends Parser {
 			return getRuleContext(PhraseContext.class,0);
 		}
 		public LogicalConditionContext(ConditionContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterLogicalCondition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitLogicalCondition(this);
-		}
 	}
 
 	public final ConditionContext condition() throws RecognitionException {
 		ConditionContext _localctx = new ConditionContext(_ctx, getState());
 		enterRule(_localctx, 4, RULE_condition);
+		int _la;
 		try {
 			setState(71);
 			_errHandler.sync(this);
@@ -463,11 +417,20 @@ public class RequirementParser extends Parser {
 				}
 				break;
 			case AS_LONG_AS:
+			case WHILE:
 				_localctx = new DurationConditionContext(_localctx);
 				enterOuterAlt(_localctx, 3);
 				{
 				setState(69);
-				match(AS_LONG_AS);
+				_la = _input.LA(1);
+				if ( !(_la==AS_LONG_AS || _la==WHILE) ) {
+				_errHandler.recoverInline(this);
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
+				}
 				setState(70);
 				((DurationConditionContext)_localctx).text = phrase();
 				}
@@ -497,14 +460,6 @@ public class RequirementParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_phrase; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).enterPhrase(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof RequirementListener ) ((RequirementListener)listener).exitPhrase(this);
-		}
 	}
 
 	public final PhraseContext phrase() throws RecognitionException {
@@ -542,7 +497,7 @@ public class RequirementParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\rO\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u000eO\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0001\u0000\u0005\u0000\n\b"+
 		"\u0000\n\u0000\f\u0000\r\t\u0000\u0001\u0000\u0001\u0000\u0005\u0000\u0011"+
 		"\b\u0000\n\u0000\f\u0000\u0014\t\u0000\u0001\u0000\u0005\u0000\u0017\b"+
@@ -555,42 +510,42 @@ public class RequirementParser extends Parser {
 		"\u0001\u0001\u0001\u0001\u0001\u0003\u0001@\b\u0001\u0001\u0002\u0001"+
 		"\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0001\u0002\u0003\u0002H\b"+
 		"\u0002\u0001\u0003\u0004\u0003K\b\u0003\u000b\u0003\f\u0003L\u0001\u0003"+
-		"\u0000\u0000\u0004\u0000\u0002\u0004\u0006\u0000\u0000U\u0000\u000b\u0001"+
-		"\u0000\u0000\u0000\u0002?\u0001\u0000\u0000\u0000\u0004G\u0001\u0000\u0000"+
-		"\u0000\u0006J\u0001\u0000\u0000\u0000\b\n\u0005\u000b\u0000\u0000\t\b"+
-		"\u0001\u0000\u0000\u0000\n\r\u0001\u0000\u0000\u0000\u000b\t\u0001\u0000"+
-		"\u0000\u0000\u000b\f\u0001\u0000\u0000\u0000\f\u001b\u0001\u0000\u0000"+
-		"\u0000\r\u000b\u0001\u0000\u0000\u0000\u000e\u0018\u0003\u0002\u0001\u0000"+
-		"\u000f\u0011\u0005\u000b\u0000\u0000\u0010\u000f\u0001\u0000\u0000\u0000"+
-		"\u0011\u0014\u0001\u0000\u0000\u0000\u0012\u0010\u0001\u0000\u0000\u0000"+
-		"\u0012\u0013\u0001\u0000\u0000\u0000\u0013\u0015\u0001\u0000\u0000\u0000"+
-		"\u0014\u0012\u0001\u0000\u0000\u0000\u0015\u0017\u0003\u0002\u0001\u0000"+
-		"\u0016\u0012\u0001\u0000\u0000\u0000\u0017\u001a\u0001\u0000\u0000\u0000"+
-		"\u0018\u0016\u0001\u0000\u0000\u0000\u0018\u0019\u0001\u0000\u0000\u0000"+
-		"\u0019\u001c\u0001\u0000\u0000\u0000\u001a\u0018\u0001\u0000\u0000\u0000"+
-		"\u001b\u000e\u0001\u0000\u0000\u0000\u001b\u001c\u0001\u0000\u0000\u0000"+
-		"\u001c \u0001\u0000\u0000\u0000\u001d\u001f\u0005\u000b\u0000\u0000\u001e"+
-		"\u001d\u0001\u0000\u0000\u0000\u001f\"\u0001\u0000\u0000\u0000 \u001e"+
-		"\u0001\u0000\u0000\u0000 !\u0001\u0000\u0000\u0000!#\u0001\u0000\u0000"+
-		"\u0000\" \u0001\u0000\u0000\u0000#$\u0005\u0000\u0000\u0001$\u0001\u0001"+
-		"\u0000\u0000\u0000%&\u0003\u0004\u0002\u0000&\'\u0005\b\u0000\u0000\'"+
-		")\u0001\u0000\u0000\u0000(%\u0001\u0000\u0000\u0000()\u0001\u0000\u0000"+
+		"\u0000\u0000\u0004\u0000\u0002\u0004\u0006\u0000\u0001\u0001\u0000\u0007"+
+		"\bU\u0000\u000b\u0001\u0000\u0000\u0000\u0002?\u0001\u0000\u0000\u0000"+
+		"\u0004G\u0001\u0000\u0000\u0000\u0006J\u0001\u0000\u0000\u0000\b\n\u0005"+
+		"\f\u0000\u0000\t\b\u0001\u0000\u0000\u0000\n\r\u0001\u0000\u0000\u0000"+
+		"\u000b\t\u0001\u0000\u0000\u0000\u000b\f\u0001\u0000\u0000\u0000\f\u001b"+
+		"\u0001\u0000\u0000\u0000\r\u000b\u0001\u0000\u0000\u0000\u000e\u0018\u0003"+
+		"\u0002\u0001\u0000\u000f\u0011\u0005\f\u0000\u0000\u0010\u000f\u0001\u0000"+
+		"\u0000\u0000\u0011\u0014\u0001\u0000\u0000\u0000\u0012\u0010\u0001\u0000"+
+		"\u0000\u0000\u0012\u0013\u0001\u0000\u0000\u0000\u0013\u0015\u0001\u0000"+
+		"\u0000\u0000\u0014\u0012\u0001\u0000\u0000\u0000\u0015\u0017\u0003\u0002"+
+		"\u0001\u0000\u0016\u0012\u0001\u0000\u0000\u0000\u0017\u001a\u0001\u0000"+
+		"\u0000\u0000\u0018\u0016\u0001\u0000\u0000\u0000\u0018\u0019\u0001\u0000"+
+		"\u0000\u0000\u0019\u001c\u0001\u0000\u0000\u0000\u001a\u0018\u0001\u0000"+
+		"\u0000\u0000\u001b\u000e\u0001\u0000\u0000\u0000\u001b\u001c\u0001\u0000"+
+		"\u0000\u0000\u001c \u0001\u0000\u0000\u0000\u001d\u001f\u0005\f\u0000"+
+		"\u0000\u001e\u001d\u0001\u0000\u0000\u0000\u001f\"\u0001\u0000\u0000\u0000"+
+		" \u001e\u0001\u0000\u0000\u0000 !\u0001\u0000\u0000\u0000!#\u0001\u0000"+
+		"\u0000\u0000\" \u0001\u0000\u0000\u0000#$\u0005\u0000\u0000\u0001$\u0001"+
+		"\u0001\u0000\u0000\u0000%&\u0003\u0004\u0002\u0000&\'\u0005\t\u0000\u0000"+
+		"\')\u0001\u0000\u0000\u0000(%\u0001\u0000\u0000\u0000()\u0001\u0000\u0000"+
 		"\u0000)*\u0001\u0000\u0000\u0000*+\u0003\u0006\u0003\u0000+,\u0005\u0001"+
-		"\u0000\u0000,-\u0005\n\u0000\u0000-.\u0005\n\u0000\u0000./\u0005\t\u0000"+
-		"\u0000/@\u0001\u0000\u0000\u000001\u0003\u0004\u0002\u000012\u0005\b\u0000"+
-		"\u000024\u0001\u0000\u0000\u000030\u0001\u0000\u0000\u000034\u0001\u0000"+
-		"\u0000\u000045\u0001\u0000\u0000\u000056\u0003\u0006\u0003\u000067\u0005"+
-		"\u0001\u0000\u000078\u0005\u0003\u0000\u000089\u0003\u0006\u0003\u0000"+
-		"9:\u0005\u0004\u0000\u0000:;\u0005\u0005\u0000\u0000;<\u0005\n\u0000\u0000"+
-		"<=\u0005\n\u0000\u0000=>\u0005\t\u0000\u0000>@\u0001\u0000\u0000\u0000"+
-		"?(\u0001\u0000\u0000\u0000?3\u0001\u0000\u0000\u0000@\u0003\u0001\u0000"+
-		"\u0000\u0000AB\u0005\u0002\u0000\u0000BH\u0003\u0006\u0003\u0000CD\u0005"+
-		"\u0006\u0000\u0000DH\u0003\u0006\u0003\u0000EF\u0005\u0007\u0000\u0000"+
-		"FH\u0003\u0006\u0003\u0000GA\u0001\u0000\u0000\u0000GC\u0001\u0000\u0000"+
-		"\u0000GE\u0001\u0000\u0000\u0000H\u0005\u0001\u0000\u0000\u0000IK\u0005"+
-		"\n\u0000\u0000JI\u0001\u0000\u0000\u0000KL\u0001\u0000\u0000\u0000LJ\u0001"+
-		"\u0000\u0000\u0000LM\u0001\u0000\u0000\u0000M\u0007\u0001\u0000\u0000"+
-		"\u0000\n\u000b\u0012\u0018\u001b (3?GL";
+		"\u0000\u0000,-\u0005\u000b\u0000\u0000-.\u0005\u000b\u0000\u0000./\u0005"+
+		"\n\u0000\u0000/@\u0001\u0000\u0000\u000001\u0003\u0004\u0002\u000012\u0005"+
+		"\t\u0000\u000024\u0001\u0000\u0000\u000030\u0001\u0000\u0000\u000034\u0001"+
+		"\u0000\u0000\u000045\u0001\u0000\u0000\u000056\u0003\u0006\u0003\u0000"+
+		"67\u0005\u0001\u0000\u000078\u0005\u0003\u0000\u000089\u0003\u0006\u0003"+
+		"\u00009:\u0005\u0004\u0000\u0000:;\u0005\u0005\u0000\u0000;<\u0005\u000b"+
+		"\u0000\u0000<=\u0005\u000b\u0000\u0000=>\u0005\n\u0000\u0000>@\u0001\u0000"+
+		"\u0000\u0000?(\u0001\u0000\u0000\u0000?3\u0001\u0000\u0000\u0000@\u0003"+
+		"\u0001\u0000\u0000\u0000AB\u0005\u0002\u0000\u0000BH\u0003\u0006\u0003"+
+		"\u0000CD\u0005\u0006\u0000\u0000DH\u0003\u0006\u0003\u0000EF\u0007\u0000"+
+		"\u0000\u0000FH\u0003\u0006\u0003\u0000GA\u0001\u0000\u0000\u0000GC\u0001"+
+		"\u0000\u0000\u0000GE\u0001\u0000\u0000\u0000H\u0005\u0001\u0000\u0000"+
+		"\u0000IK\u0005\u000b\u0000\u0000JI\u0001\u0000\u0000\u0000KL\u0001\u0000"+
+		"\u0000\u0000LJ\u0001\u0000\u0000\u0000LM\u0001\u0000\u0000\u0000M\u0007"+
+		"\u0001\u0000\u0000\u0000\n\u000b\u0012\u0018\u001b (3?GL";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

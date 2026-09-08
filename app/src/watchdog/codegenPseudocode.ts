@@ -39,13 +39,6 @@ function conditionPhraseText(
   return sourceText.slice(phrase.start!.start, phrase.stop!.stop + 1);
 }
 
-// Skeletons only, not required to run: the condition's free text is embedded
-// directly in the control-structure header ("IF the sensor detects motion
-// THEN") instead of standing in for it with a hardcoded flag variable — that
-// reads a real boolean/logical expression, which "the sensor detects
-// motion" (a SOPHIST phrase, not a pseudocode expression) generally isn't,
-// so this will usually fail to parse or run as written. That's fine here:
-// the point is showing the shape a condition maps to, not a working demo.
 function wrapWithCondition(
   path: BedingungsPath,
   conditionText: string,
@@ -93,14 +86,6 @@ const PATH_DESCRIPTION: Record<BedingungsPath, string> = {
   solange: "a duration condition (as long as)",
 };
 
-/**
- * The step-1 condition skeleton for the reusable `.code` snippet: one
- * numbered comment introducing it, then the actual IF/WHILE/ENDIF/ENDWHILE
- * as real, uncommented pseudocode — not buried in comments like the rest of
- * the wiring notes, since this is the one part meant to be copied verbatim.
- * A placeholder line stands in for the real call, which lives in the
- * student's own program and gets wired up in the numbered steps after this.
- */
 function conditionCodeStep(
   path: BedingungsPath,
   conditionText: string,
@@ -120,7 +105,6 @@ function conditionCodeStep(
   return `// 1) This is ${PATH_DESCRIPTION[path]}:\n${skeleton.join("\n")}`;
 }
 
-/** Renumbers "// N)" step comments by a fixed amount — used to make room for the condition step ahead of them. */
 function shiftSteps(text: string, by: number): string {
   if (by === 0) return text;
   return text.replace(/\/\/ (\d+)\)/g, (_m, n) => `// ${Number(n) + by})`);
@@ -323,10 +307,6 @@ export function generatePseudocodeWatchdog(
   return new PseudocodeGenerator(sourceText).visit(ctx)!;
 }
 
-// A real ANTLR visitor (unlike the original project's Python/flowchart
-// converters, which never subclass their generated Visitor base at all):
-// dispatch to visitAutonomousActivity/visitUserInteraction happens via
-// double dispatch (ctx.accept(this)), not an instanceof check from outside.
 class PseudocodeGenerator extends RequirementVisitor<PseudocodeWatchdog> {
   constructor(private sourceText: string) {
     super();
@@ -386,9 +366,6 @@ class PseudocodeGenerator extends RequirementVisitor<PseudocodeWatchdog> {
     const requirementLine = `The System ${isType2 ? "must offer the user the possibility to " : "must "}${verb} ${object}.`;
     const example = `// Requirement: ${requirementLine}\n${exampleLines.join("\n")}\n`;
 
-    // Everything below is one continuous numbered sequence, condition included
-    // as step 1 when there is one — not two separate, overlapping "1./2." and
-    // "1)/2)" lists.
     const hasCondition = Boolean(bedingungsPath && conditionText);
     const conditionStep = hasCondition
       ? `${conditionCodeStep(bedingungsPath!, conditionText!)}\n\n`

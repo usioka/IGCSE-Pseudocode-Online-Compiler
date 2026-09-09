@@ -155,19 +155,6 @@ req.: The System must offer the user the possibility to open Door.
 res: violated (input was requested, but Door was never assigned)
 
 
-Logic (BedingungsMASTER condition) examples — /sophist-watchdog only.
-verdict.ts never reads the condition, so on /watchdog these three all give
-the exact same result as Scenario 1 (satisfied, Total changed 0 -> 15) — the
-condition only changes anything in the *generated* pseudocode, on
-/sophist-watchdog. Paste req. there; the pseudocode box auto-fills.
-
-None of the three are meant to run as written — they're numbered skeletons
-("// 1. <path>" / "// 2. procedure") showing the shape a condition maps to,
-with its own free text embedded directly as the IF/WHILE's expression (e.g.
-"IF the sensor detects motion THEN"). A SOPHIST phrase generally isn't a
-valid pseudocode expression, so this is expected not to parse or run —
-that's the point, not a bug.
-
 
 17) logic — if (logical condition)
 req.: If the sensor detects motion, the System must calculate Total.

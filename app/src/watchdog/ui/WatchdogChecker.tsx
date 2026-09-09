@@ -90,9 +90,8 @@ export default function WatchdogChecker() {
             Watchdog Checker
           </h1>
           <p className="text-dark-text text-sm mt-1">
-            Pseudocode on the left, a SOPHIST must-requirement (FunktionsMASTeR
-            Type 1 — autonomous system activity) on the right. Run checks
-            whether the program run satisfies it.
+            Pseudocode on the left, a SOPHIST must-requirement (FunktionsMASTeR)
+            on the right. Run checks whether the program run satisfies it.
           </p>
         </div>
 

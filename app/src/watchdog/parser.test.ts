@@ -98,7 +98,7 @@ describe("Requirement grammar — Type 1 (autonomous system activity)", () => {
 });
 
 describe("Requirement grammar — Type 2 (user interaction)", () => {
-  it("parses the worked example from foundation_sophist.txt", () => {
+  it("parses the worked example", () => {
     const req = okInteraction(
       "The Smart-Home-System must offer the authorized person the possibility to open Door.",
     );
@@ -184,6 +184,8 @@ describe("Requirement grammar — BedingungsMASTER condition types", () => {
   });
 
   it("rejects wrong word order (soon/as swapped)", () => {
-    rejected("As the soon sensor detects motion, the System must LogEvent Motion.");
+    rejected(
+      "As the soon sensor detects motion, the System must LogEvent Motion.",
+    );
   });
 });
